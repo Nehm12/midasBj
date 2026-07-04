@@ -1,0 +1,34 @@
+name: midasbenin
+description: "MIDAS-Bénin - Master Identity and Data Access System"
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.0
+  dio: ^5.4.3+1
+  hive_flutter: ^1.1.0
+  hive: ^2.2.3
+  cryptography: ^2.7.0
+  mqtt_client: ^10.3.0
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.1.1
+  flutter_secure_storage: ^9.2.2
+  intl: ^0.19.0
+  json_annotation: ^4.9.0
+  path_provider: ^2.1.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.9
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true

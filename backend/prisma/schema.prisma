@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ConsentStatus {
+  REQUESTED
+  GRANTED
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum DeviceStatus {
+  PENDING
+  PAIRED
+  ACTIVE
+  DISABLED
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  npi       String   @unique
+  did       String   @unique
+  publicKey String
+  keycloakId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  credentials    VerifiableCredential[]
+  consentsGiven  Consent[]             @relation("CitizenConsents")
+  devices        IoTDevice[]
+  auditEvents    AuditEvent[]
+}
+
+model VerifiableCredential {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  type       String
+  issuer     String
+  credential Json
+  signature  String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Consent {
+  id           String         @id @default(uuid()) @db.Uuid
+  citizenId    String         @db.Uuid
+  providerDID  String
+  purpose      String
+  dataClasses  String[]
+  duration     Int
+  signature    String
+  previousHash String
+  status       ConsentStatus  @default(REQUESTED)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  expiresAt    DateTime?
+
+  citizen User @relation("CitizenConsents", fields: [citizenId], references: [id])
+}
+
+model IoTDevice {
+  id            String       @id @default(uuid()) @db.Uuid
+  deviceId      String       @unique
+  ownerId       String?      @db.Uuid
+  publicKey     String
+  attestation   Json?
+  status        DeviceStatus @default(PENDING)
+  lastSeenAt    DateTime?
+  pairedAt      DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  owner User?          @relation(fields: [ownerId], references: [id])
+  data  IoTData[]
+}
+
+model IoTData {
+  id                String   @id @default(uuid()) @db.Uuid
+  deviceId          String   @db.Uuid
+  encryptedPayload  String
+  nonce             String
+  signature         String
+  consentId         String?
+  receivedAt        DateTime @default(now())
+
+  device IoTDevice @relation(fields: [deviceId], references: [id])
+}
+
+model AuditEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  entityType String
+  entityId   String
+  action     String
+  actorDID   String?
+  payload    Json?
+  previousHash String
+  hash       String
+  signature  String
+  userId     String?  @db.Uuid
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model ProcessingRegister {
+  id          String   @id @default(uuid()) @db.Uuid
+  controller  String
+  purpose     String
+  dataClasses String[]
+  retention   Int
+  legalBasis  String
+  createdAt   DateTime @default(now())
+}

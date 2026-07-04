@@ -1,0 +1,65 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: midas-postgres
+    environment:
+      POSTGRES_USER: midas
+      POSTGRES_PASSWORD: midas
+      POSTGRES_DB: midasbenin
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U midas -d midasbenin']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: midas-keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/midasbenin
+      KC_DB_USERNAME: midas
+      KC_DB_PASSWORD: midas
+      KC_HOSTNAME: localhost
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: 'true'
+    ports:
+      - '8080:8080'
+    command: start-dev --import-realm
+    volumes:
+      - ./docker/keycloak/realm.json:/opt/keycloak/data/import/realm.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: midas-backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://midas:midas@postgres:5432/midasbenin
+      KEYCLOAK_URL: http://keycloak:8080
+      JWT_SECRET: dev-secret-change-in-production
+    ports:
+      - '3000:3000'
+      - '1883:1883'
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+volumes:
+  postgres_data:

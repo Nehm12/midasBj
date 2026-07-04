@@ -1,0 +1,63 @@
+{
+  "realm": "midas-benin",
+  "displayName": "MIDAS-Bénin",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      { "name": "citizen" },
+      { "name": "iot_operator" },
+      { "name": "apdp_inspector" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "mobile-app",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "pkceCodeChallengeMethod": "S256",
+      "redirectUris": ["midasbenin://callback", "http://localhost:3000/*"],
+      "directAccessGrantsEnabled": true
+    },
+    {
+      "clientId": "apdp-console",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "redirectUris": ["http://localhost:4200/*"],
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "backend-service",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin-apdp",
+      "enabled": true,
+      "email": "apdp@midas-benin.bj",
+      "firstName": "Admin",
+      "lastName": "APDP",
+      "realmRoles": ["apdp_inspector"],
+      "credentials": [{ "type": "password", "value": "apdp123" }]
+    },
+    {
+      "username": "citoyen1",
+      "enabled": true,
+      "firstName": "Alice",
+      "lastName": "Dossa",
+      "realmRoles": ["citizen"],
+      "credentials": [{ "type": "password", "value": "citoyen123" }]
+    }
+  ]
+}

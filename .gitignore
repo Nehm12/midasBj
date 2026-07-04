@@ -1,0 +1,39 @@
+# Node
+node_modules/
+dist/
+
+# Flutter
+mobile/.dart_tool/
+mobile/build/
+mobile/.pub-cache/
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+*.xcconfig
+*.plist
+*.xcworkspace
+*.xcscheme
+*.pbxproj
+*.entitlements
+*.cmake
+*.lock
+*.flutter-plugins
+*.metadata
+*.manifest
+*.rc
+
+# Env
+.env
+*.local
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
