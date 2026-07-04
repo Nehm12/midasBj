@@ -24,6 +24,68 @@ identité, car la clé privée ne quitte jamais son appareil.
 
 ---
 
+## 🇧🇯 Concrètement, ça donne quoi pour un citoyen ?
+
+Vous ouvrez MIDAS. Vous voyez :
+> **Bonjour Junior. Votre identité est vérifiée.**
+
+### 1. Mon identité numérique (Wallet)
+Aujourd'hui vous avez : CIN, Passeport, Permis, Carte électorale — des bouts de papier.
+Demain avec MIDAS : vous ouvrez votre Wallet et vous avez tout dedans :
+Carte d'identité, Permis de conduire, Diplômes, Attestations, Carte CNSS,
+Carte d'assurance... Plus besoin d'envoyer des PDF. Vous présentez un
+**justificatif numérique vérifiable** — l'entreprise vérifie la signature
+en 1 seconde.
+
+### 2. Contrôle des données
+Aujourd'hui une entreprise récupère vos données sans que vous voyiez
+précisément ce qui est partagé. Avec MIDAS vous voyez :
+> **Orange demande :**
+> Nom · Téléphone · Adresse
+> Valable 30 jours
+> **Autoriser ?** Oui / Non
+
+Vous décidez. Pas de fuite invisible.
+
+### 3. Révocation
+Vous pouvez dire : **Je retire l'autorisation**. L'entreprise perd
+immédiatement l'accès. Fini les données partagées à vie.
+
+### 4. Historique
+Vous consultez :
+> Hier — ANIP — Consultation identité — 10h23 — Autorisée
+> CNSS — Consultation — 15h11
+
+Tout est tracé. Rien n'est caché.
+
+### 5. Signature électronique
+Aujourd'hui : vous imprimez, vous signez, vous scannez.
+Demain : **Signer** → empreinte digitale → signature Ed25519 → document valide.
+
+### 6. Diplômes
+Vous postulez. L'entreprise reçoit :
+> Diplôme + signature de l'université → vérifié automatiquement.
+Plus besoin d'appeler l'université pour confirmer.
+
+### 7. Santé
+Le médecin demande l'accès à votre groupe sanguin et allergies pour 48 heures.
+Vous acceptez. Après 48h, l'accès disparaît tout seul.
+
+### 8. IoT (Appareils connectés)
+Vous installez un capteur agricole. Le téléphone détecte :
+Température, Humidité, Position GPS.
+Toutes les données sont chiffrées avant d'être envoyées.
+
+### 9. APDP (Protection des données)
+L'APDP peut répondre à des questions comme :
+- Qui a consulté mes données ?
+- Quand ?
+- Avec quel consentement ?
+- Y a-t-il eu une violation ?
+Sans pouvoir modifier l'historique.
+
+---
+
 ## 🏗 Architecture
 
 ```
@@ -374,12 +436,49 @@ de zéro jusqu'au MVP fonctionnel :
 - Commentaires ajoutés à l'intégralité du code backend (21 fichiers)
 - Commentaires ajoutés à l'intégralité du code mobile (18 fichiers)
 
-### Prochaine étape : Phase 1
-- Intégration Keycloak pour l'authentification SSO
-- Portefeuille DID avancé avec résolution DID
-- Credentials multi-émetteurs (ANIP, CNA, etc.)
-- Pare-feu IoT et alertes en temps réel
-- Tests unitaires et d'intégration
+### Phases suivantes
+
+#### Phase 1 — Identité & Auth
+- Intégration Keycloak (SSO, OIDC, gestion des rôles)
+- Portefeuille DID avancé : résolution DID universelle, rotation de clés
+- Credentials multi-émetteurs : ANIP (CIN), CNA (Permis), Université (Diplômes)
+- Chiffrement de bout en bout du wallet avec clé dérivée du NPI
+- Authentification biométrique (empreinte, reconnaissance faciale)
+
+#### Phase 2 — Consentement & Partage de données
+- Moteur BPMN (Workflow) pour les flux de consentement
+- Interface granulaire : choisir précisément chaque donnée partagée
+- Signature du consentement par l'utilisateur (Ed25519)
+- Consentement contextuel : temporaire, permanent, à usage unique
+- Portabilité des données (export JSON/LD)
+
+#### Phase 3 — IoT Bridge
+- Firmware ESP32 avec attestation matérielle (secure boot)
+- Appairage par QR code signé + tunnel chiffré
+- Collecte et horodatage des données télémétriques
+- Alertes temps réel via WebSocket/MQTT
+- Tableau de bord IoT avec historique et seuils configurables
+
+#### Phase 4 — Audit & Gouvernance
+- Chaîne cryptographique complète (hash chain) des événements
+- Signature individuelle de chaque événement d'audit
+- Console APDP : visualisation, recherche, export
+- Détection automatique de violations (intrusion, accès non autorisé)
+- Preuve juridique exportable (PDF horodaté + signature)
+
+#### Phase 5 — Sécurité, Tests & Conformité
+- Tests unitaires et d'intégration (Jest, Flutter test)
+- Tests de pénétration : injection, rejeu, usurpation
+- Scan de vulnérabilités (npm audit, Trivy, Snyk)
+- Conformité RGPD / LPDB (Loi Protection Données Bénin)
+- Durcissement Docker : images signées, réseau isolé, secrets manager
+
+#### Phase 6 — Déploiement MVP & Documentation
+- CI/CD : GitHub Actions (lint, analyse, build, test)
+- Déploiement cloud (OVH / AWS) avec HTTPS (Let's Encrypt)
+- Documentation technique complète (ADR, diagrammes, API docs)
+- Vidéo de démonstration et guide utilisateur
+- Mise en production progressive (sandbox → pilote → national)
 
 ---
 
