@@ -1,3 +1,13 @@
+/**
+ * Service du registre des traitements (RGPD).
+ *
+ * Permet aux contrôleurs de données d'enregistrer leurs traitements :
+ * - controller : nom de l'organisation responsable
+ * - purpose : finalité du traitement
+ * - dataClasses : catégories de données traitées
+ * - retention : durée de conservation en jours
+ * - legalBasis : base légale du traitement
+ */
 import prisma from '../../infrastructure/db/client.js';
 
 export const processingRegisterService = {

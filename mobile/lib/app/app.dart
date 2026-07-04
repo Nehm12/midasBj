@@ -1,3 +1,9 @@
+/**
+ * Widget racine de l'application MIDAS-Bénin.
+ *
+ * Configure Material 3 avec un thème vert (couleur nationale du Bénin),
+ * support des modes clair/sombre, et le routeur GoRouter.
+ */
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'router.dart';

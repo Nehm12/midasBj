@@ -1,34 +1,18 @@
+/**
+ * Gestion d'état des appareils IoT.
+ *
+ * IoTState stocke la liste des appareils connectés et le statut
+ * de chargement.
+ *
+ * IoTNotifier :
+ *   loadDevices() → récupère les appareils depuis l'API
+ *   addDevice()   → associe un nouvel appareil (via QR code)
+ */
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_client.dart';
 
-enum DeviceStatus { pending, paired, active, disabled }
-
-class IoTDevice {
-  final String deviceId;
-  final String? ownerId;
-  final DeviceStatus status;
-  final DateTime? lastSeenAt;
-  final DateTime? pairedAt;
-
-  const IoTDevice({
-    required this.deviceId,
-    this.ownerId,
-    required this.status,
-    this.lastSeenAt,
-    this.pairedAt,
-  });
-
-  factory IoTDevice.fromJson(Map<String, dynamic> json) => IoTDevice(
-    deviceId: json['deviceId'] as String,
-    ownerId: json['ownerId'] as String?,
-    status: DeviceStatus.values.firstWhere((e) => e.name == json['status']),
-    lastSeenAt: json['lastSeenAt'] != null ? DateTime.parse(json['lastSeenAt'] as String) : null,
-    pairedAt: json['pairedAt'] != null ? DateTime.parse(json['pairedAt'] as String) : null,
-  );
-}
-
 class IoTState {
-  final List<IoTDevice> devices;
+  final List<Map<String, dynamic>> devices;
   final bool isLoading;
 
   const IoTState({this.devices = const [], this.isLoading = false});
@@ -39,16 +23,24 @@ class IoTNotifier extends StateNotifier<IoTState> {
 
   IoTNotifier(this._api) : super(const IoTState());
 
-  Future<void> loadDevices(String ownerId) async {
+  Future<void> loadDevices() async {
     state = IoTState(isLoading: true);
-    final res = await _api.get('/iot/devices', params: {'ownerId': ownerId});
-    final list = (res.data as List).map((e) => IoTDevice.fromJson(e)).toList();
-    state = IoTState(devices: list);
+    try {
+      final res = await _api.get('/iot/devices');
+      final list = (res.data['devices'] as List<dynamic>?)
+              ?.cast<Map<String, dynamic>>() ??
+          [];
+      state = IoTState(devices: list);
+    } catch (e) {
+      state = const IoTState();
+    }
   }
 
-  Future<void> pairDevice(String deviceId, String ownerId) async {
-    await _api.post('/iot/pair', {'deviceId': deviceId, 'ownerId': ownerId});
-    await loadDevices(ownerId);
+  Future<void> addDevice(Map<String, dynamic> deviceData) async {
+    try {
+      await _api.post('/iot/devices', deviceData);
+      await loadDevices();
+    } catch (_) {}
   }
 }
 

@@ -1,32 +1,28 @@
+/**
+ * Gestion d'état du portefeuille.
+ *
+ * WalletState contient la liste des Verifiable Credentials (VC)
+ * et le statut de chargement.
+ *
+ * WalletNotifier :
+ *   loadWallet()   → récupère les VCs depuis l'API
+ *   issueCredential() → demande un nouveau VC via l'API
+ */
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_client.dart';
 
 class WalletState {
-  final String? did;
-  final String? didDoc;
   final List<Map<String, dynamic>> credentials;
+  final String? did;
+  final String? npi;
   final bool isLoading;
 
   const WalletState({
-    this.did,
-    this.didDoc,
     this.credentials = const [],
+    this.did,
+    this.npi,
     this.isLoading = false,
   });
-
-  WalletState copyWith({
-    String? did,
-    String? didDoc,
-    List<Map<String, dynamic>>? credentials,
-    bool? isLoading,
-  }) {
-    return WalletState(
-      did: did ?? this.did,
-      didDoc: didDoc ?? this.didDoc,
-      credentials: credentials ?? this.credentials,
-      isLoading: isLoading ?? this.isLoading,
-    );
-  }
 }
 
 class WalletNotifier extends StateNotifier<WalletState> {
@@ -34,39 +30,37 @@ class WalletNotifier extends StateNotifier<WalletState> {
 
   WalletNotifier(this._api) : super(const WalletState());
 
-  Future<void> createWallet(String userId) async {
-    state = state.copyWith(isLoading: true);
+  Future<void> loadWallet() async {
+    state = WalletState(isLoading: true, did: state.did, npi: state.npi);
     try {
-      final res = await _api.post('/wallet/create', {'userId': userId});
+      final res = await _api.get('/wallet');
+      final walletData = res.data['wallet'] as Map<String, dynamic>?;
+      final vcs = walletData?['credentials'] as List<dynamic>? ?? [];
+
       state = WalletState(
-        did: res.data['did'],
-        didDoc: res.data['didDoc'].toString(),
+        credentials: vcs.cast<Map<String, dynamic>>(),
+        did: res.data['did'] as String? ?? state.did,
+        npi: res.data['npi'] as String? ?? state.npi,
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false);
+      state = WalletState(
+        isLoading: false,
+        did: state.did,
+        npi: state.npi,
+      );
     }
   }
 
-  Future<void> loadCredentials(String userId) async {
-    final res = await _api.get('/wallet/vcs', params: {'userId': userId});
-    state = state.copyWith(
-      credentials: List<Map<String, dynamic>>.from(res.data),
-    );
-  }
-
-  Future<void> requestVC(String userId) async {
-    state = state.copyWith(isLoading: true);
+  Future<void> issueCredential() async {
     try {
       await _api.post('/wallet/issue-vc', {
-        'userId': userId,
-        'type': 'NpiCredential',
-        'issuer': 'did:midas:benin:anip',
-        'issuerPrivateKey': '',
+        'type': 'BasicIdentityCredential',
+        'claims': {'fullName': 'Citoyen MIDAS', 'dateOfBirth': '1990-01-01'},
       });
-      await loadCredentials(userId);
+      await loadWallet();
     } catch (e) {
-      state = state.copyWith(isLoading: false);
+      // L'erreur sera gérée dans l'écran
     }
   }
 }

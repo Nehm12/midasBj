@@ -1,3 +1,10 @@
+/**
+ * Routes du registre des traitements (conformité RGPD).
+ *
+ * POST /processing-register     → Déclarer un traitement (JWT requis)
+ * GET  /processing-register      → Liste de tous les traitements
+ * GET  /processing-register/:id  → Détail d'un traitement
+ */
 import { FastifyInstance } from 'fastify';
 import { processingRegisterService } from './processing-register.service.js';
 import { authMiddleware } from '../../infrastructure/auth/middleware.js';

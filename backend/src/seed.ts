@@ -1,10 +1,20 @@
+/**
+ * Script d'amorçage de la base de données.
+ *
+ * Crée des données de démonstration :
+ * - Alice et Bob (citoyens avec leurs paires de clés Ed25519)
+ * - Un VerifiableCredential de type NpiCredential pour Alice
+ * - Un appareil IoT (ESP32) en attente d'appairage
+ */
 import prisma from './infrastructure/db/client.js';
 import { ed25519Crypto } from './infrastructure/crypto/ed25519.js';
 
 async function seed() {
+  // --- Génération des clés Ed25519 pour les utilisateurs de démo ---
   const aliceKeys = ed25519Crypto.generateKeyPair();
   const bobKeys = ed25519Crypto.generateKeyPair();
 
+  // --- Création des utilisateurs ---
   const alice = await prisma.user.create({
     data: {
       npi: 'NPIBENIN202400001',
@@ -21,6 +31,7 @@ async function seed() {
     },
   });
 
+  // --- Création d'un credential vérifiable (NPI) émis par l'ANIP ---
   const vc = await prisma.verifiableCredential.create({
     data: {
       userId: alice.id,
@@ -35,6 +46,7 @@ async function seed() {
     },
   });
 
+  // --- Création d'un appareil IoT (simulation ESP32) ---
   const device = await prisma.ioTDevice.create({
     data: {
       deviceId: 'ESP32-S3-A1B2C3',

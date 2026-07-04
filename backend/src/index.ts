@@ -1,3 +1,10 @@
+/**
+ * Point d'entrée du serveur MIDAS-Bénin.
+ *
+ * Initialise Fastify avec les plugins de sécurité (CORS, Helmet, rate-limit),
+ * documente l'API avec Swagger, monte toutes les routes sous /api/v1,
+ * démarre le broker MQTT pour l'IoT, puis écoute sur le port configuré.
+ */
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
@@ -11,9 +18,12 @@ import { startMqttBroker } from './infrastructure/mqtt/broker.js';
 async function main() {
   const app = Fastify({ logger: { level: config.LOG_LEVEL } });
 
+  // --- Plugins de sécurité et utilitaires ---
   await app.register(cors, { origin: true });
   await app.register(helmet);
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
+
+  // --- Documentation Swagger disponible sur /docs ---
   await app.register(swagger, {
     openapi: {
       info: {
@@ -25,10 +35,14 @@ async function main() {
     },
   });
   await app.register(swaggerUi, { routePrefix: '/docs' });
+
+  // --- Enregistrement de toutes les routes métier ---
   await app.register(apiRoutes, { prefix: '/api/v1' });
 
+  // --- Broker MQTT pour la communication avec les appareils IoT ---
   await startMqttBroker(app);
 
+  // --- Gestion centralisée des erreurs ---
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error);
     reply.status(error.statusCode ?? 500).send({
@@ -37,6 +51,7 @@ async function main() {
     });
   });
 
+  // --- Démarrage du serveur HTTP ---
   try {
     await app.listen({ port: config.PORT, host: config.HOST });
     app.log.info(`MIDAS-Bénin backend running on port ${config.PORT}`);

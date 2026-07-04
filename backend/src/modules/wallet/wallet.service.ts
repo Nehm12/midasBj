@@ -1,3 +1,13 @@
+/**
+ * Service de portefeuille DID (Decentralized Identifier).
+ *
+ * createWallet   → Construit un DID Document conforme W3C avec la clé publique
+ * issueCredential → Émet un VerifiableCredential signé par l'émetteur
+ * getCredentials  → Liste les credentials d'un utilisateur
+ * resolveDID      → Résout un DID en son document
+ *
+ * Le DID Document suit le standard https://www.w3.org/TR/did-core/
+ */
 import crypto from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import prisma from '../../infrastructure/db/client.js';

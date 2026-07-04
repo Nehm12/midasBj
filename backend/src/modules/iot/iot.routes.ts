@@ -1,3 +1,11 @@
+/**
+ * Routes du module IoT.
+ *
+ * POST /iot/register → Enregistrement d'un appareil (QR code)
+ * POST /iot/pair     → Appairage à un compte citoyen (JWT requis)
+ * POST /iot/data     → Réception de données télémétriques chiffrées
+ * GET  /iot/devices  → Liste des appareils du citoyen (JWT requis)
+ */
 import { FastifyInstance } from 'fastify';
 import { iotService } from './iot.service.js';
 import { authMiddleware } from '../../infrastructure/auth/middleware.js';

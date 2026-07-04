@@ -1,3 +1,10 @@
+/**
+ * Middleware d'authentification JWT.
+ *
+ * Vérifie que chaque requête protégée possède un token JWT valide
+ * dans l'en-tête Authorization: Bearer <token>.
+ * Le payload décodé (sub, did, npi) est attaché à request.user.
+ */
 import { FastifyReply, FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
 import config from '../../config/index.js';
@@ -27,6 +34,10 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
   }
 }
 
+/**
+ * Fonction utilitaire pour protéger une route individuelle.
+ * Exécute le middleware puis le handler si l'authentification réussit.
+ */
 export function protectRoute(
   handler: (request: FastifyRequest, reply: FastifyReply) => Promise<unknown>,
 ) {

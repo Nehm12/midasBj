@@ -1,3 +1,9 @@
+/**
+ * Configuration centralisée de l'application.
+ *
+ * Utilise Zod pour valider et typer les variables d'environnement.
+ * Toutes les valeurs ont des defaults pour le développement.
+ */
 import { z } from 'zod';
 
 const envSchema = z.object({

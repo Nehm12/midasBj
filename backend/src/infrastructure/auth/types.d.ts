@@ -1,8 +1,14 @@
+/**
+ * Extension du type FastifyRequest pour inclure les données d'authentification.
+ */
 import 'fastify';
-import { AuthPayload } from './middleware.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
-    user?: AuthPayload;
+    user?: {
+      sub: string;
+      did: string;
+      npi: string;
+    };
   }
 }

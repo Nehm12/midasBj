@@ -1,3 +1,13 @@
+/**
+ * Broker MQTT pour la communication avec les appareils IoT.
+ *
+ * Utilise Aedes (broker MQTT pur JavaScript) pour :
+ * - Recevoir les publications des appareils sur midas/<deviceId>/telemetry
+ * - Persister les données reçues dans PostgreSQL via Prisma
+ * - Mettre à jour le timestamp lastSeenAt de l'appareil
+ *
+ * Les appareils doivent envoyer : { ciphertext, nonce, signature }
+ */
 import Aedes, { Client, PublishPacket } from 'aedes';
 import { createServer } from 'node:net';
 import { FastifyInstance } from 'fastify';

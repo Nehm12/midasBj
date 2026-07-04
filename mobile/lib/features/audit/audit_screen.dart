@@ -1,6 +1,14 @@
+/**
+ * Écran de vérification d'audit (journal des événements de sécurité).
+ *
+ * Affiche :
+ * - Un badge d'intégrité général (vert si tout est OK, rouge si violation)
+ * - La liste des événements (connexions, accès, modifications)
+ * - Chaque événement avec timestamp, action, statut, et DPI concerné
+ * - Pull-to-refresh pour recharger
+ */
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../auth/auth_provider.dart';
 import 'audit_provider.dart';
 
 class AuditScreen extends ConsumerWidget {
@@ -8,83 +16,226 @@ class AuditScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final auditState = ref.watch(auditProvider);
-    final auth = ref.watch(authProvider);
+    final state = ref.watch(auditProvider);
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Audit'),
+        centerTitle: true,
+        actions: [
+          if (!state.isLoading)
+            IconButton(
+              icon: Icon(
+                state.hasViolations
+                    ? Icons.warning_amber_rounded
+                    : Icons.verified_rounded,
+                color: state.hasViolations ? Colors.red : Colors.green,
+              ),
+              tooltip: state.hasViolations
+                  ? 'Violations détectées'
+                  : 'Journal intègre',
+              onPressed: () => _showIntegrityDialog(
+                context,
+                state.hasViolations,
+                colorScheme,
+              ),
+            ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(auditProvider.notifier).loadEvents(),
+        child: state.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : state.events.isEmpty
+                ? _buildEmptyState(theme, colorScheme)
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: state.events.length,
+                    itemBuilder: (ctx, i) => _AuditEventCard(
+                      event: state.events[i],
+                      theme: theme,
+                      colorScheme: colorScheme,
+                    ),
+                  ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ThemeData theme, ColorScheme colorScheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.receipt_long_outlined, size: 64, color: colorScheme.outline),
+          const SizedBox(height: 16),
+          Text(
+            'Aucun événement d\'audit',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showIntegrityDialog(
+      BuildContext context, bool hasViolations, ColorScheme colorScheme) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
           children: [
-            Text('Journal d\'Audit', style: theme.textTheme.titleLarge),
-            const Spacer(),
-            if (auditState.isValid)
-              Chip(avatar: const Icon(Icons.verified, size: 16), label: const Text('Intègre'))
-            else
-              Chip(avatar: const Icon(Icons.warning, size: 16, color: Colors.red), label: const Text('Violation')),
+            Icon(
+              hasViolations
+                  ? Icons.warning_amber_rounded
+                  : Icons.verified_rounded,
+              color: hasViolations ? Colors.red : Colors.green,
+            ),
+            const SizedBox(width: 12),
+            Text(hasViolations ? 'Violation détectée' : 'Journal intègre'),
           ],
         ),
-        const SizedBox(height: 16),
-        if (auditState.violations.isNotEmpty)
-          Card(
-            color: theme.colorScheme.errorContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber, color: theme.colorScheme.error),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text('${auditState.violations.length} violation(s) détectée(s)')),
-                ],
-              ),
-            ),
-          ),
-        const SizedBox(height: 8),
-        if (auditState.events.isEmpty)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                children: [
-                  Icon(Icons.history, size: 64, color: theme.colorScheme.outline),
-                  const SizedBox(height: 16),
-                  const Text('Aucun événement d\'audit'),
-                  Text('Les actions seront journalisées ici', style: theme.textTheme.bodySmall),
-                ],
-              ),
-            ),
-          ),
-        ...auditState.events.map((e) => Card(
-          margin: const EdgeInsets.only(bottom: 4),
-          child: ListTile(
-            dense: true,
-            leading: CircleAvatar(
-              radius: 16,
-              backgroundColor: theme.colorScheme.primaryContainer,
-              child: Text(e.action[0].toUpperCase(), style: TextStyle(fontSize: 12, color: theme.colorScheme.onPrimaryContainer)),
-            ),
-            title: Text(e.action, style: const TextStyle(fontSize: 14)),
-            subtitle: Text(
-              '${e.entityType}/${e.entityId.substring(0, 8)}...\n${e.createdAt.toLocal()}',
-              style: const TextStyle(fontSize: 11),
-            ),
-            trailing: Icon(Icons.verified, size: 16, color: Colors.green),
-          ),
-        )),
-        const SizedBox(height: 16),
-        FilledButton.tonal(
-          onPressed: () => ref.read(auditProvider.notifier).loadTrail(auth.did ?? ''),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.refresh),
-              const SizedBox(width: 8),
-              const Text('Charger mon journal'),
-            ],
-          ),
+        content: Text(
+          hasViolations
+              ? 'Des événements suspects ont été détectés dans le journal d\'audit. Consultez la liste des événements pour plus de détails.'
+              : 'Le journal d\'audit ne contient aucune anomalie. Tous les événements sont vérifiés.',
         ),
-      ],
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
     );
+  }
+}
+
+class _AuditEventCard extends StatelessWidget {
+  final Map<String, dynamic> event;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+
+  const _AuditEventCard({
+    required this.event,
+    required this.theme,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final action = event['action'] as String? ?? 'ACTION_INCONNUE';
+    final status = event['status'] as String? ?? 'UNKNOWN';
+    final timestamp = event['timestamp'] as String? ?? '—';
+    final dpi = event['dpi'] as String? ?? '—';
+    final details = event['details'] as String? ?? '';
+
+    final isViolation = status == 'VIOLATION' || status == 'FAILED';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0.5,
+      color: isViolation
+          ? Colors.red.withValues(alpha: 0.03)
+          : null,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isViolation
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    _actionIcon(action),
+                    size: 16,
+                    color: isViolation ? Colors.red : colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    action,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isViolation ? Colors.red.shade700 : null,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isViolation
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : Colors.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: isViolation ? Colors.red : Colors.green,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              timestamp,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.outline,
+                fontSize: 11,
+              ),
+            ),
+            if (dpi != '—') ...[
+              const SizedBox(height: 4),
+              Text(
+                'DPI: $dpi',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontFamily: 'monospace',
+                  fontSize: 10,
+                  color: colorScheme.outline,
+                ),
+              ),
+            ],
+            if (details.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                details,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _actionIcon(String action) {
+    if (action.contains('LOGIN')) return Icons.login;
+    if (action.contains('ACCESS')) return Icons.lock_open;
+    if (action.contains('MODIFY')) return Icons.edit;
+    if (action.contains('CREATE')) return Icons.add_circle;
+    if (action.contains('DELETE')) return Icons.delete;
+    return Icons.info_outline;
   }
 }

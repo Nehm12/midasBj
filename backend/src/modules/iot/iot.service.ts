@@ -1,3 +1,14 @@
+/**
+ * Service de gestion des appareils IoT.
+ *
+ * registerDevice → Enregistre un nouvel appareil (via QR code ou API)
+ * pairDevice     → Associe un appareil à un utilisateur (propriétaire)
+ * ingestData     → Reçoit et stocke les données de télémétrie chiffrées
+ * getDevices     → Liste les appareils d'un propriétaire
+ *
+ * Les données IoT sont chiffrées côté appareil (ChaCha20-Poly1305)
+ * et ne peuvent être déchiffrées que par le propriétaire via X25519.
+ */
 import { DeviceStatus, Prisma } from '@prisma/client';
 import prisma from '../../infrastructure/db/client.js';
 

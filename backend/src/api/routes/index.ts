@@ -1,3 +1,9 @@
+/**
+ * Regroupement de toutes les routes API.
+ *
+ * Enregistre chaque module (auth, wallet, consent, iot, audit,
+ * processing-register) sous le préfixe /api/v1 défini dans index.ts.
+ */
 import { FastifyInstance } from 'fastify';
 import { authRoutes } from '../../modules/auth/auth.routes.js';
 import { walletRoutes } from '../../modules/wallet/wallet.routes.js';

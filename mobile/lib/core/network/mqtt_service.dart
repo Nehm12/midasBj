@@ -1,3 +1,9 @@
+/**
+ * Client MQTT pour la communication avec les appareils IoT.
+ *
+ * Se connecte au broker MQTT du backend, s'abonne aux topics
+ * de télémétrie et notifie l'application via un Stream broadcast.
+ */
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +18,7 @@ class MqttService {
 
   Stream<Map<String, dynamic>> get dataStream => _controller.stream;
 
+  /** Se connecte au broker et s'abonne aux données IoT */
   Future<void> connect(String deviceId) async {
     _client = MqttServerClient('10.0.2.2', 'flutter_$deviceId');
     _client!.port = 1883;
@@ -33,11 +40,13 @@ class MqttService {
         _controller.add(jsonDecode(payload) as Map<String, dynamic>);
       });
     } catch (e) {
+      // Le log est volontairement laissé pour le débogage mobile
       // ignore: avoid_print
       print('MQTT connection failed: $e');
     }
   }
 
+  /** Publie un message sur un topic MQTT */
   Future<void> publish(String topic, Map<String, dynamic> message) async {
     final builder = MqttClientPayloadBuilder();
     builder.addString(jsonEncode(message));

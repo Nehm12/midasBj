@@ -1,3 +1,10 @@
+/**
+ * Routes du module d'authentification.
+ *
+ * POST /auth/register  → Enrôlement : le citoyen envoie son NPI et sa clé publique
+ * POST /auth/login     → Connexion : le citoyen prouve son identité avec une signature
+ * GET  /auth/session   → Validation d'un token JWT existant
+ */
 import { FastifyInstance } from 'fastify';
 import { authService } from './auth.service.js';
 

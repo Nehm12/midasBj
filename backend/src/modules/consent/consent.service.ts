@@ -1,3 +1,14 @@
+/**
+ * Service de gestion des consentements.
+ *
+ * Chaque consentement est lié à un citoyen et un fournisseur de service.
+ * Le grant et le revoke sont signés cryptographiquement par le citoyen
+ * pour garantir son authenticité.
+ *
+ * Signature attendue :
+ *   grant  : ed25519.sign(`grant:${consentId}:${citizenId}`)
+ *   revoke : ed25519.sign(`revoke:${consentId}:${citizenId}`)
+ */
 import { ConsentStatus } from '@prisma/client';
 import prisma from '../../infrastructure/db/client.js';
 import { ed25519Crypto } from '../../infrastructure/crypto/ed25519.js';
@@ -14,7 +25,6 @@ export const consentService = {
       where: { citizenId: data.citizenId },
       orderBy: { createdAt: 'desc' },
     });
-
     const consent = await prisma.consent.create({
       data: {
         citizenId: data.citizenId,

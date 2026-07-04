@@ -1,3 +1,13 @@
+/**
+ * Service d'authentification.
+ *
+ * L'enrôlement enregistre le NPI et la clé publique du citoyen,
+ * puis génère un DID (Identifiant Décentralisé).
+ *
+ * La connexion vérifie que le citoyen possède bien la clé privée
+ * associée à sa clé publique en validant une signature Ed25519 du NPI.
+ * Si la signature est valide, un JWT est émis pour les requêtes suivantes.
+ */
 import prisma from '../../infrastructure/db/client.js';
 import config from '../../config/index.js';
 import jwt from 'jsonwebtoken';

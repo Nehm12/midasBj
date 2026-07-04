@@ -1,3 +1,15 @@
+/**
+ * Service de journal d'audit chaîné cryptographiquement.
+ *
+ * Chaque événement est lié au précédent par un hash SHA-256,
+ * formant une chaîne de confiance. Si un événement est modifié,
+ * tous les hash suivants deviennent invalides.
+ *
+ * Structure de la chaîne :
+ *   hash = SHA256(previousHash | entityType | entityId | action | payload | timestamp)
+ *
+ * Le premier événement d'une entité a previousHash = "genesis".
+ */
 import crypto from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import prisma from '../../infrastructure/db/client.js';

@@ -1,3 +1,14 @@
+/**
+ * Routes de gestion des consentements.
+ *
+ * POST /consent/request → Un fournisseur demande l'accès aux données
+ * POST /consent/grant   → Le citoyen accepte (signature Ed25519 requise)
+ * POST /consent/revoke  → Le citoyen révoque (signature Ed25519 requise)
+ * GET  /consent/history → Historique des consentements du citoyen
+ * GET  /consent/:id     → Détail d'un consentement
+ *
+ * Sauf /consent/:id, toutes les routes nécessitent un token JWT.
+ */
 import { FastifyInstance } from 'fastify';
 import { consentService } from './consent.service.js';
 import { authMiddleware } from '../../infrastructure/auth/middleware.js';

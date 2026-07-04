@@ -1,3 +1,11 @@
+/**
+ * Routes du journal d'audit.
+ *
+ * POST /audit/event          → Enregistre un événement dans la chaîne
+ * GET  /audit/trail/:entityId → Récupère la piste d'audit complète
+ * POST /audit/verify         → Vérifie l'intégrité de la chaîne
+ * GET  /audit/violations     → Liste les violations détectées
+ */
 import { FastifyInstance } from 'fastify';
 import { auditService } from './audit.service.js';
 import { authMiddleware } from '../../infrastructure/auth/middleware.js';

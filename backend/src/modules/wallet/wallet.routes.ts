@@ -1,3 +1,13 @@
+/**
+ * Routes du portefeuille DID / Verifiable Credentials.
+ *
+ * POST /wallet/create   → Crée un DID Document W3C pour l'utilisateur
+ * POST /wallet/issue-vc → Émet un VerifiableCredential signé
+ * GET  /wallet/vcs       → Liste les credentials de l'utilisateur
+ * GET  /wallet/resolve/:did → Résout un DID en son document
+ *
+ * Les routes /create, /issue-vc et /vcs nécessitent un token JWT valide.
+ */
 import { FastifyInstance } from 'fastify';
 import { walletService } from './wallet.service.js';
 import { authMiddleware } from '../../infrastructure/auth/middleware.js';

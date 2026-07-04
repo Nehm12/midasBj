@@ -1,3 +1,18 @@
+/**
+ * Gestion d'état de l'authentification.
+ *
+ * AuthState stocke le statut (non connecté, en cours, connecté),
+ * le DID, le NPI, l'ID utilisateur, la clé publique et les erreurs.
+ *
+ * AuthNotifier gère :
+ *   register(npi) → génère une paire de clés Ed25519, envoie la clé
+ *                    publique au serveur, stocke la clé privée localement
+ *   login(npi)    → signe le NPI avec la clé privée, envoie la signature
+ *                    au serveur pour vérification, reçoit un JWT
+ *   logout()      → réinitialise l'état
+ *
+ * La clé privée ne quitte JAMAIS le téléphone (stockage sécurisé).
+ */
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import '../../core/crypto/crypto_service.dart';
@@ -50,6 +65,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier(this._api, this._crypto, this._storage)
       : super(const AuthState());
 
+  /** Enrôlement : crée un compte avec NPI + clé publique Ed25519 */
   Future<void> register(String npi) async {
     state = state.copyWith(status: AuthStatus.authenticating, error: null);
     try {
@@ -66,6 +82,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final did = res.data['did'] as String;
       final userId = res.data['id'] as String;
 
+      // Sauvegarde sécurisée des clés
       await _storage.saveKeyPair(npi, privKeyHex, pubKeyHex);
       await _storage.saveSecure('did_$npi', did);
       await _storage.saveSecure('userId_$npi', userId);
@@ -85,6 +102,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /** Connexion : prouve son identité par signature Ed25519 du NPI */
   Future<void> login(String npi) async {
     state = state.copyWith(status: AuthStatus.authenticating, error: null);
     try {
