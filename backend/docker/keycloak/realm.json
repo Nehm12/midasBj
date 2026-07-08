@@ -1,16 +1,22 @@
 {
   "realm": "midas-benin",
   "displayName": "MIDAS-Bénin",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>MIDAS-Bénin</span></div>",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
   "loginWithEmailAllowed": false,
   "bruteForceProtected": true,
+  "rememberMe": true,
+  "passwordPolicy": "length(8) and digits(1) and lowerCase(1) and upperCase(1)",
   "roles": {
     "realm": [
-      { "name": "citizen" },
-      { "name": "iot_operator" },
-      { "name": "apdp_inspector" }
+      { "name": "citizen", "description": "Citoyen béninois - droit de consulter ses propres données" },
+      { "name": "iot_operator", "description": "Opérateur IoT - peut gérer les appareils connectés" },
+      { "name": "apdp_inspector", "description": "Inspecteur APDP - droit de consulter les pistes d'audit" },
+      { "name": "vc_issuer", "description": "Émetteur de credentials - ANIP, CNA, Universités" },
+      { "name": "admin", "description": "Administrateur système MIDAS" }
     ]
   },
   "clients": [
@@ -20,9 +26,14 @@
       "publicClient": true,
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
       "pkceCodeChallengeMethod": "S256",
       "redirectUris": ["midasbenin://callback", "http://localhost:3000/*"],
-      "directAccessGrantsEnabled": true
+      "webOrigins": ["http://localhost:3000"],
+      "directAccessGrantsEnabled": true,
+      "attributes": {
+        "post.logout.redirect.uris": "midasbenin://callback"
+      }
     },
     {
       "clientId": "apdp-console",
@@ -31,33 +42,79 @@
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
       "redirectUris": ["http://localhost:4200/*"],
-      "directAccessGrantsEnabled": false
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
     },
     {
       "clientId": "backend-service",
       "enabled": true,
       "publicClient": false,
       "protocol": "openid-connect",
-      "serviceAccountsEnabled": true
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true
     }
   ],
   "users": [
+    {
+      "username": "NPIBENIN202400001",
+      "enabled": true,
+      "firstName": "Alice",
+      "lastName": "Dossa",
+      "email": "alice.dossa@email.bj",
+      "emailVerified": true,
+      "attributes": {
+        "npi": ["NPIBENIN202400001"],
+        "did": ["did:midas:benin:NPIBENIN202400001"]
+      },
+      "realmRoles": ["citizen"],
+      "credentials": [{ "type": "password", "value": "alice2024!" }]
+    },
+    {
+      "username": "NPIBENIN202400002",
+      "enabled": true,
+      "firstName": "Bob",
+      "lastName": "Sossa",
+      "email": "bob.sossa@email.bj",
+      "emailVerified": true,
+      "attributes": {
+        "npi": ["NPIBENIN202400002"],
+        "did": ["did:midas:benin:NPIBENIN202400002"]
+      },
+      "realmRoles": ["citizen"],
+      "credentials": [{ "type": "password", "value": "bob2024!" }]
+    },
     {
       "username": "admin-apdp",
       "enabled": true,
       "email": "apdp@midas-benin.bj",
       "firstName": "Admin",
       "lastName": "APDP",
-      "realmRoles": ["apdp_inspector"],
-      "credentials": [{ "type": "password", "value": "apdp123" }]
+      "emailVerified": true,
+      "realmRoles": ["apdp_inspector", "admin"],
+      "credentials": [{ "type": "password", "value": "apdp2024!" }]
     },
     {
-      "username": "citoyen1",
+      "username": "anip-agent",
       "enabled": true,
-      "firstName": "Alice",
-      "lastName": "Dossa",
-      "realmRoles": ["citizen"],
-      "credentials": [{ "type": "password", "value": "citoyen123" }]
+      "firstName": "Agent",
+      "lastName": "ANIP",
+      "email": "anip@midas-benin.bj",
+      "emailVerified": true,
+      "realmRoles": ["vc_issuer"],
+      "attributes": {
+        "issuer_did": ["did:midas:benin:anip"]
+      },
+      "credentials": [{ "type": "password", "value": "anip2024!" }]
+    },
+    {
+      "username": "iot-admin",
+      "enabled": true,
+      "firstName": "IoT",
+      "lastName": "Admin",
+      "email": "iot@midas-benin.bj",
+      "emailVerified": true,
+      "realmRoles": ["iot_operator"],
+      "credentials": [{ "type": "password", "value": "iot2024!" }]
     }
   ]
 }

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APDP Console — MIDAS-Benin</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">M</div>
+    <div class="logo-text">
+      <strong>MIDAS</strong>
+      <small>Console APDP</small>
+    </div>
+  </div>
+  <nav>
+    <a href="#" class="nav-item active" data-page="dashboard">
+      <span class="nav-icon nav-icon-dashboard"></span> Tableau de bord
+    </a>
+    <a href="#" class="nav-item" data-page="audit">
+      <span class="nav-icon nav-icon-audit"></span> Piste d'audit
+    </a>
+    <a href="#" class="nav-item" data-page="violations">
+      <span class="nav-icon nav-icon-violations"></span> Violations
+    </a>
+    <a href="#" class="nav-item" data-page="verify">
+      <span class="nav-icon nav-icon-verify"></span> Verification
+    </a>
+    <a href="#" class="nav-item" data-page="entities">
+      <span class="nav-icon nav-icon-entities"></span> Types d'entites
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Connecte</span>
+  </div>
+</aside>
+
+<main class="main-content">
+  <header class="topbar">
+    <h1 id="pageTitle">Tableau de bord</h1>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" onclick="refreshCurrentPage()">Actualiser</button>
+      <span class="api-base">API: /api/v1</span>
+    </div>
+  </header>
+
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="totalEvents">—</div>
+        <div class="stat-label">Evenements d'audit</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalViolations">—</div>
+        <div class="stat-label">Violations</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalEntities">—</div>
+        <div class="stat-label">Types d'entites</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="chainStatus">—</div>
+        <div class="stat-label">Chaine d'audit</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Activite recente</h3>
+      <div id="recentEvents"><p class="muted">Chargement...</p></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-audit">
+    <div class="card">
+      <div class="filter-bar">
+        <input type="text" id="auditSearch" placeholder="Rechercher par ID d'entite..." class="input">
+        <select id="auditEntityType" class="input">
+          <option value="">Tous les types</option>
+        </select>
+        <select id="auditAction" class="input">
+          <option value="">Toutes les actions</option>
+          <option value="LOGIN">Connexion</option>
+          <option value="ACCESS">Acces</option>
+          <option value="CREATE">Creation</option>
+          <option value="DELETE">Suppression</option>
+          <option value="BREACH">Violation</option>
+        </select>
+        <input type="date" id="auditFrom" class="input" style="max-width:160px">
+        <input type="date" id="auditTo" class="input" style="max-width:160px">
+        <button class="btn btn-primary" onclick="searchAudit()">Rechercher</button>
+      </div>
+      <div id="auditResults"><p class="muted">Effectuez une recherche pour afficher les resultats.</p></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-violations">
+    <div class="card">
+      <h3>Violations detectees</h3>
+      <button class="btn btn-primary" onclick="loadViolations()" style="margin-bottom:16px">Actualiser</button>
+      <div id="violationsList"><p class="muted">Aucune violation detectee.</p></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-verify">
+    <div class="card">
+      <h3>Verifier l'integrite d'une chaine d'audit</h3>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input type="text" id="verifyEntityId" placeholder="ID de l'entite" class="input" style="flex:1">
+        <button class="btn btn-primary" onclick="verifyChain()">Verifier</button>
+      </div>
+      <div id="verifyResult" style="margin-top:16px"></div>
+    </div>
+    <div class="card">
+      <h3>Exporter une preuve d'audit</h3>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input type="text" id="exportEntityId" placeholder="ID de l'entite" class="input" style="flex:1">
+        <button class="btn btn-primary" onclick="exportProof()">Exporter JSON-LD</button>
+      </div>
+      <div id="exportResult" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-entities">
+    <div class="card">
+      <h3>Types d'entites suivies</h3>
+      <div id="entityTypesList"><p class="muted">Chargement...</p></div>
+    </div>
+  </div>
+</main>
+
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="spinner"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

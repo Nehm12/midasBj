@@ -1,14 +1,5 @@
-/**
- * Interface d'authentification.
- *
- * Écran d'accueil avec :
- * - Logo animé et titre "MIDAS-Bénin"
- * - Bouton "S'enrôler avec mon NPI" pour créer un compte
- * - Bouton "Se connecter" pour les utilisateurs existants
- * - Dialog de saisie du NPI avec validation
- *
- * Après une authentification réussie, redirige vers /wallet.
- */
+/// Interface d'authentification.
+library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,15 +20,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   @override
   void initState() {
     super.initState();
-    // Animation de fondu à l'ouverture
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeIn,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeIn);
     _fadeController.forward();
   }
 
@@ -53,12 +40,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Redirection automatique après connexion
     ref.listen<AuthState>(authProvider, (prev, next) {
       if (next.status == AuthStatus.authenticated) {
         context.go('/wallet');
       }
-      // Affichage des erreurs dans un SnackBar
       if (next.error != null && next.error!.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -71,139 +56,152 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     });
 
     return Scaffold(
-      body: Container(
-        // Fond dégradé vert (couleur Bénin)
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              colorScheme.primary,
-              colorScheme.primary.withValues(alpha: 0.8),
-              colorScheme.surface,
-            ],
-            stops: const [0.0, 0.3, 0.7],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface.withValues(alpha: 0.95),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorScheme.shadow.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.verified_user_rounded,
-                        size: 64,
-                        color: colorScheme.primary,
-                      ),
+      backgroundColor: const Color(0xFFFAFAFA),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B1A1A).withValues(alpha: 0.06),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 32),
-                    // Titre
-                    Text(
-                      'MIDAS-Bénin',
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimary,
-                      ),
+                    child: const Icon(
+                      Icons.verified_user_rounded,
+                      size: 56,
+                      color: Color(0xFF8B1A1A),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Identité Numérique Souveraine',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onPrimary.withValues(alpha: 0.9),
-                      ),
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'MIDASBJ',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1A1A1A),
+                      letterSpacing: 2,
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Gérez votre identité numérique,\nvos consentements et vos appareils IoT',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onPrimary.withValues(alpha: 0.7),
-                      ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Identité Numérique Souveraine',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: const Color(0xFF1A1A1A),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
-                    const SizedBox(height: 48),
-                    // Boutons d'action ou indicateur de chargement
-                    if (authState.status == AuthStatus.authenticating)
-                      Column(
-                        children: [
-                          CircularProgressIndicator(
-                            color: colorScheme.onPrimary,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Opération en cours...',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onPrimary,
-                            ),
-                          ),
-                        ],
-                      )
-                    else ...[
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: FilledButton.icon(
-                          onPressed: () =>
-                              _showNpiDialog(context, ref, 'enroll'),
-                          icon: const Icon(Icons.person_add_rounded),
-                          label: const Text(
-                            'S\'enrôler avec mon NPI',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: colorScheme.onPrimary,
-                            foregroundColor: colorScheme.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            elevation: 2,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Gérez votre identité, vos consentements\net vos appareils connectés',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 56),
+                  if (authState.status == AuthStatus.authenticating)
+                    Column(
+                      children: [
+                        const CircularProgressIndicator(color: Color(0xFF8B1A1A)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Opération en cours...',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: const Color(0xFF1A1A1A).withValues(alpha: 0.6),
                           ),
                         ),
+                      ],
+                    )
+                  else ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton.icon(
+                        onPressed: () => _showNpiDialog(context, ref, 'enroll'),
+                        icon: const Icon(Icons.person_add_rounded, size: 20),
+                        label: const Text(
+                          "S'enrôler avec mon NPI",
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showNpiDialog(context, ref, 'login'),
+                        icon: const Icon(Icons.login_rounded, size: 20),
+                        label: const Text(
+                          'Se connecter (NPI + signature)',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '— ou —',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showNpiDialog(context, ref, 'simple'),
+                        icon: const Icon(Icons.keyboard_rounded, size: 20),
+                        label: const Text(
+                          'Connexion simple (NPI seul)',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _loginWithKeycloak(context, ref),
+                        icon: const Icon(Icons.admin_panel_settings_outlined, size: 20),
+                        label: const Text(
+                          'SSO Keycloak',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    if (authState.biometricAvailable) ...[
+                      const SizedBox(height: 14),
                       SizedBox(
                         width: double.infinity,
                         height: 52,
                         child: OutlinedButton.icon(
-                          onPressed: () =>
-                              _showNpiDialog(context, ref, 'login'),
-                          icon: const Icon(Icons.login_rounded),
-                          label: const Text(
-                            'Se connecter',
-                            style: TextStyle(fontSize: 16),
+                          onPressed: () => _biometricLogin(context, ref),
+                          icon: Icon(
+                            authState.biometricEnabled
+                                ? Icons.fingerprint
+                                : Icons.fingerprint_outlined,
+                            size: 20,
                           ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: colorScheme.onPrimary,
-                            side: BorderSide(
-                              color:
-                                  colorScheme.onPrimary.withValues(alpha: 0.5),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                          label: Text(
+                            authState.biometricEnabled
+                                ? 'Deverrouillage biometrique'
+                                : 'Activer biométrie',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
                     ],
                   ],
-                ),
+                ],
               ),
             ),
           ),
@@ -212,63 +210,103 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 
-  /** Affiche un dialogue pour saisir le NPI (enrôlement ou connexion) */
+  Future<void> _loginWithKeycloak(BuildContext context, WidgetRef ref) async {
+    try {
+      const token = 'placeholder-keycloak-token';
+      await ref.read(authProvider.notifier).loginWithKeycloak(token);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur Keycloak: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _biometricLogin(BuildContext context, WidgetRef ref) async {
+    final notifier = ref.read(authProvider.notifier);
+    final ok = await notifier.authenticateBiometric();
+    if (ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Authentification biométrique réussie'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _showNpiDialog(BuildContext context, WidgetRef ref, String mode) {
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(
               mode == 'enroll' ? Icons.person_add_rounded : Icons.login_rounded,
-              color: Theme.of(context).colorScheme.primary,
+              color: const Color(0xFF8B1A1A),
+              size: 22,
             ),
-            const SizedBox(width: 12),
-            Text(mode == 'enroll' ? 'Saisir votre NPI' : 'Connexion'),
+            const SizedBox(width: 10),
+            Text(
+              mode == 'enroll' ? 'Saisir votre NPI' : 'Connexion',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
         content: TextField(
           controller: controller,
           autofocus: true,
-          keyboardType: TextInputType.text,
           textCapitalization: TextCapitalization.characters,
+          style: const TextStyle(color: Color(0xFF1A1A1A)),
           decoration: InputDecoration(
             labelText: 'Numéro NPI',
             hintText: 'NPIBENIN2024...',
-            prefixIcon: const Icon(Icons.badge_outlined),
+            labelStyle: const TextStyle(color: Color(0xFF1A1A1A)),
+            hintStyle: TextStyle(color: const Color(0xFF1A1A1A).withValues(alpha: 0.4)),
+            prefixIcon: const Icon(Icons.badge_outlined, size: 20, color: Color(0xFF1A1A1A)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD6D6D6)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD6D6D6)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF1A1A1A)),
             ),
             filled: true,
+            fillColor: const Color(0xFFF5F5F5),
           ),
+          cursorColor: const Color(0xFF1A1A1A),
           onSubmitted: (value) {
             if (value.trim().isNotEmpty) {
               Navigator.of(ctx).pop();
-              if (mode == 'enroll') {
-                ref.read(authProvider.notifier).register(value.trim());
-              } else {
-                ref.read(authProvider.notifier).login(value.trim());
-              }
+              _handleAuth(ref, mode, value.trim());
             }
           },
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annuler'),
+            child: Text('Annuler',
+              style: TextStyle(color: const Color(0xFF1A1A1A).withValues(alpha: 0.6))),
           ),
           FilledButton(
             onPressed: () {
               final value = controller.text.trim();
               if (value.isNotEmpty) {
                 Navigator.of(ctx).pop();
-                if (mode == 'enroll') {
-                  ref.read(authProvider.notifier).register(value);
-                } else {
-                  ref.read(authProvider.notifier).login(value);
-                }
+                _handleAuth(ref, mode, value);
               }
             },
             child: Text(mode == 'enroll' ? 'Enrôler' : 'Connecter'),
@@ -276,5 +314,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
         ],
       ),
     );
+  }
+
+  void _handleAuth(WidgetRef ref, String mode, String npi) {
+    final notifier = ref.read(authProvider.notifier);
+    switch (mode) {
+      case 'enroll':
+        notifier.register(npi);
+        break;
+      case 'login':
+        notifier.login(npi);
+        break;
+      case 'simple':
+        notifier.loginSimple(npi);
+        break;
+    }
   }
 }

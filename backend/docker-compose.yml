@@ -28,6 +28,8 @@ services:
       KC_DB_USERNAME: midas
       KC_DB_PASSWORD: midas
       KC_HOSTNAME: localhost
+      KC_HOSTNAME_URL: http://localhost:8080
+      KC_HOSTNAME_STRICT: 'false'
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HEALTH_ENABLED: 'true'
@@ -39,6 +41,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'exec 3<>/dev/tcp/127.0.0.1/8080; echo -e "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3; cat <&3 | head -1 | grep -q "200 OK"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   backend:
     build:
@@ -49,6 +57,7 @@ services:
       NODE_ENV: development
       DATABASE_URL: postgresql://midas:midas@postgres:5432/midasbenin
       KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_OIDC_URL: http://localhost:8080/realms/midas-benin
       JWT_SECRET: dev-secret-change-in-production
     ports:
       - '3000:3000'
@@ -59,7 +68,7 @@ services:
       postgres:
         condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   postgres_data:

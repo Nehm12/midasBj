@@ -6,14 +6,21 @@
  * démarre le broker MQTT pour l'IoT, puis écoute sur le port configuré.
  */
 import Fastify from 'fastify';
+import fastifyWebsocket from '@fastify/websocket';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import fastifyStatic from '@fastify/static';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import config from './config/index.js';
 import { apiRoutes } from './api/routes/index.js';
 import { startMqttBroker } from './infrastructure/mqtt/broker.js';
+import { registerWebSocketRoutes } from './infrastructure/ws/alerts.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
   const app = Fastify({ logger: { level: config.LOG_LEVEL } });
@@ -22,6 +29,10 @@ async function main() {
   await app.register(cors, { origin: true });
   await app.register(helmet);
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
+
+  // --- WebSocket pour alertes temps réel ---
+  await app.register(fastifyWebsocket);
+  await registerWebSocketRoutes(app);
 
   // --- Documentation Swagger disponible sur /docs ---
   await app.register(swagger, {
@@ -35,6 +46,16 @@ async function main() {
     },
   });
   await app.register(swaggerUi, { routePrefix: '/docs' });
+
+  // --- Console APDP (interface web d'administration) ---
+  await app.register(fastifyStatic, {
+    root: join(__dirname, '..', 'web'),
+    prefix: '/console/',
+    index: ['index.html'],
+    decorateReply: true,
+  });
+  app.get('/console', async (_req, reply) => reply.redirect('/console/'));
+  app.get('/console/*', async (_req, reply) => reply.sendFile('index.html'));
 
   // --- Enregistrement de toutes les routes métier ---
   await app.register(apiRoutes, { prefix: '/api/v1' });

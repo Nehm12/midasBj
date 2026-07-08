@@ -259,6 +259,70 @@ npx prisma db push --force-reset
 npx tsx src/seed.ts
 ```
 
+> ⚠️ **Important :** Le seed crée les utilisateurs dans la base de données
+> mais leurs **clés privées** sont générées côté serveur et affichées dans
+> la console. L'application mobile ne peut PAS se connecter avec les
+> utilisateurs du seed (Alice/Bob) car leurs clés privées ne sont pas
+> stockées sur le téléphone.
+>
+> **Pour tester l'app**, suivez l'étape 8 : enrôlez-vous avec un
+> **nouveau NPI** directement depuis l'écran d'accueil.
+
+---
+
+> 💡 **Si vous débutez :** 
+> - Node.js : https://nodejs.org (téléchargez la version LTS)
+> - Docker : https://docs.docker.com/engine/install/
+> - Flutter : https://docs.flutter.dev/get-started/install
+
+### 2. Lancer l'infrastructure (Base de données + Keycloak)
+
+```bash
+# Se placer dans le dossier du projet
+cd midasbenin
+
+# Démarrer PostgreSQL et Keycloak avec Docker
+docker compose -f backend/docker-compose.yml up -d postgres keycloak
+```
+
+> ⏳ **Premier lancement :** Docker va télécharger les images
+> (PostgreSQL 16 et Keycloak 24). Cela peut prendre 2 à 5 minutes selon
+> votre connexion.
+>
+> Pour vérifier que tout est OK :
+> ```bash
+> docker ps
+> ```
+> Vous devez voir `midas-postgres` (healthy) et `midas-keycloak` (Up).
+
+### 3. Installer les dépendances du backend
+
+```bash
+cd backend
+npm install
+```
+
+### 4. Configurer la base de données
+
+```bash
+# Créer les tables dans PostgreSQL
+npx prisma db push --force-reset
+```
+
+> Cette commande crée toutes les tables à partir du fichier
+> `prisma/schema.prisma` (User, Consent, IoTDevice, AuditEvent...).
+
+### 5. Ajouter des données de démonstration
+
+```bash
+# Lance le script seed qui crée :
+# - Alice (citoyenne)
+# - Bob (citoyen)
+# - Un credential vérifiable pour Alice
+# - Un appareil IoT
+npx tsx src/seed.ts
+```
+
 ### 6. Démarrer le backend
 
 ```bash
@@ -299,12 +363,43 @@ flutter run -d android
 
 ### 8. Tester l'application
 
-1. **Écran d'accueil** : appuyez sur "S'enrôler avec mon NPI"
-2. **Entrez un NPI** : par exemple `ALICE` (créé par le seed)
-3. **L'application** : génère une paire de clés Ed25519 et envoie la clé
+1. **Écran d'accueil** : appuyez sur **"S'enrôler avec mon NPI"**
+2. **Entrez un NOUVEAU NPI** (qui n'existe pas encore en base, par exemple
+   `TEST99`). **Ne pas utiliser `ALICE` ou `NPIBENIN202400001`** — ces
+   comptes seed n'ont pas de clé privée stockée sur votre téléphone.
+3. **L'application** : génère une paire de clés Ed25519 sur votre appareil,
+   stocke la clé privée dans le stockage sécurisé, et envoie la clé
    publique au serveur
-4. **Vous êtes connecté** : le wallet, les consentements et l'audit sont
+4. ✅ **Vous êtes connecté** : le wallet, les consentements et l'audit sont
    accessibles depuis la barre de navigation en bas
+5. **Prochaine connexion** : appuyez sur **"Se connecter"** avec le même NPI
+   — l'app signe le NPI avec votre clé privée locale et le serveur vérifie
+
+---
+
+### 9. Commandes utiles — Base de données
+
+```bash
+# Lister les bases de données PostgreSQL
+docker exec midas-postgres psql -U midas -l
+
+# Lister les tables
+docker exec midas-postgres psql -U midas -d midasbenin -c "\dt"
+
+# Voir tous les utilisateurs enregistrés
+docker exec midas-postgres psql -U midas -d midasbenin -c "SELECT npi, did, LEFT(\"publicKey\", 20) as pubkey FROM \"User\";"
+
+# Voir les credentials vérifiables
+docker exec midas-postgres psql -U midas -d midasbenin -c "SELECT id, type, issuer FROM \"VerifiableCredential\";"
+
+# Voir les consentements
+docker exec midas-postgres psql -U midas -d midasbenin -c "SELECT id, purpose, status FROM \"Consent\";"
+
+# Voir les appareils IoT
+docker exec midas-postgres psql -U midas -d midasbenin -c "SELECT id, \"deviceId\", status FROM \"IoTDevice\";"
+
+# Connexion interactive à PostgreSQL
+docker exec -it midas-postgres psql -U midas -d midasbenin
 
 ---
 

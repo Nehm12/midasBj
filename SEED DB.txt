@@ -1,0 +1,15 @@
+SEED DB
+
+
+NPI	DID	Clés
+NPIBENIN202400001 (Alice)	did:midas:benin:NPIBENIN202400001	Générées à chaque seed
+NPIBENIN202400002 (Bob)	did:midas:benin:NPIBENIN202400002	Générées à chaque seed
+
+
+[•] Phase 0 - Fondations : monorepo, tooling, CI, dépendances
+[ ] Phase 1 - Identité & Auth : Keycloak, wallet, NPI, DID, VC
+[ ] Phase 2 - Consentement : BPMN engine, interface granulaire, signature
+[•] Phase 3 - IoT Bridge : ESP32 pairing, MQTT, attestation, collecte
+[•] Phase 4 - Audit & Gouvernance : hash chain, signature, APDP console
+[ ] Phase 5 - Sécurité, tests, conformité juridique
+[ ] Phase 6 - Déploiement MVP et documentation

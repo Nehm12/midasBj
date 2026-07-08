@@ -15,6 +15,7 @@ const envSchema = z.object({
   KEYCLOAK_REALM: z.string().default('midas-benin'),
   KEYCLOAK_CLIENT_ID: z.string().default('mobile-app'),
   KEYCLOAK_CLIENT_SECRET: z.string().default(''),
+  KEYCLOAK_OIDC_URL: z.string().default('http://localhost:8080/realms/midas-benin'),
   MQTT_PORT: z.coerce.number().default(1883),
   MQTT_WS_PORT: z.coerce.number().default(8081),
   JWT_SECRET: z.string().default('dev-secret-change-in-production'),

@@ -1,15 +1,14 @@
-/**
- * Service de stockage sécurisé.
- *
- * Utilise FlutterSecureStorage (chiffré au niveau du système Android/iOS)
- * pour stocker les clés privées et les tokens.
- *
- * Méthodes :
- * - saveSecure / readSecure / deleteSecure : stockage de chaînes
- * - saveJson / readJson : stockage de données JSON
- * - saveKeyPair : stockage des clés Ed25519 (privée + publique)
- * - saveCredential / readCredential : stockage des VCs
- */
+/// Service de stockage sécurisé.
+///
+/// Utilise FlutterSecureStorage (chiffré au niveau du système Android/iOS)
+/// pour stocker les clés privées et les tokens.
+///
+/// Méthodes :
+/// - saveSecure / readSecure / deleteSecure : stockage de chaînes
+/// - saveJson / readJson : stockage de données JSON
+/// - saveKeyPair : stockage des clés Ed25519 (privée + publique)
+/// - saveCredential / readCredential : stockage des VCs
+library;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 

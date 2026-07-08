@@ -9,6 +9,8 @@ declare module 'fastify' {
       sub: string;
       did: string;
       npi: string;
+      roles: string[];
+      provider: 'jwt' | 'keycloak';
     };
   }
 }

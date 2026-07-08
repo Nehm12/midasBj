@@ -9,10 +9,19 @@ datasource db {
 
 enum ConsentStatus {
   REQUESTED
+  PENDING_REVIEW
   GRANTED
   ACTIVE
   REVOKED
   EXPIRED
+  DENIED
+  COMPLETED
+}
+
+enum ConsentType {
+  TEMPORARY
+  PERMANENT
+  SINGLE_USE
 }
 
 enum DeviceStatus {
@@ -55,21 +64,57 @@ model Consent {
   providerDID  String
   purpose      String
   dataClasses  String[]
-  duration     Int
-  signature    String
-  previousHash String
+  consentType  ConsentType    @default(TEMPORARY)
+  duration     Int            @default(3600)
+  signature    String         @default("")
+  previousHash String         @default("genesis")
   status       ConsentStatus  @default(REQUESTED)
+  usageCount   Int            @default(0)
+  maxUsageCount Int           @default(1)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   expiresAt    DateTime?
 
-  citizen User @relation("CitizenConsents", fields: [citizenId], references: [id])
+  citizen      User             @relation("CitizenConsents", fields: [citizenId], references: [id])
+  workflow     WorkflowInstance?
+
+  @@index([citizenId])
+  @@index([status])
+}
+
+model WorkflowDefinition {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  version   Int      @default(1)
+  states    Json
+  transitions Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  instances WorkflowInstance[]
+}
+
+model WorkflowInstance {
+  id              String   @id @default(uuid()) @db.Uuid
+  definitionId    String   @db.Uuid
+  consentId       String   @unique @db.Uuid
+  currentState    String
+  context         Json
+  history         Json     @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  definition WorkflowDefinition @relation(fields: [definitionId], references: [id])
+  consent    Consent            @relation(fields: [consentId], references: [id])
+
+  @@index([currentState])
 }
 
 model IoTDevice {
   id            String       @id @default(uuid()) @db.Uuid
   deviceId      String       @unique
   ownerId       String?      @db.Uuid
+  name          String       @default("Appareil IoT")
   publicKey     String
   attestation   Json?
   status        DeviceStatus @default(PENDING)
@@ -78,36 +123,87 @@ model IoTDevice {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  owner User?          @relation(fields: [ownerId], references: [id])
-  data  IoTData[]
+  owner     User?        @relation(fields: [ownerId], references: [id])
+  data      IoTData[]
+  alerts    IoTAlert[]
+  thresholds IoTThreshold[]
+
+  @@index([ownerId])
 }
 
 model IoTData {
   id                String   @id @default(uuid()) @db.Uuid
   deviceId          String   @db.Uuid
-  encryptedPayload  String
-  nonce             String
-  signature         String
+  encryptedPayload  String   @default("")
+  nonce             String   @default("")
+  signature         String   @default("")
+  payloadType       String   @default("telemetry")
+  metricName        String?
+  metricValue       Float?
+  unit              String?
   consentId         String?
   receivedAt        DateTime @default(now())
 
   device IoTDevice @relation(fields: [deviceId], references: [id])
+
+  @@index([deviceId, receivedAt])
+  @@index([deviceId, metricName])
+}
+
+model IoTThreshold {
+  id        String   @id @default(uuid()) @db.Uuid
+  deviceId  String   @db.Uuid
+  metric    String
+  minValue  Float?
+  maxValue  Float?
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  device IoTDevice @relation(fields: [deviceId], references: [id])
+
+  @@unique([deviceId, metric])
+}
+
+model IoTAlert {
+  id        String   @id @default(uuid()) @db.Uuid
+  deviceId  String   @db.Uuid
+  type      String
+  severity  String   @default("INFO")
+  message   String
+  metric    String?
+  value     Float?
+  threshold Float?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  device IoTDevice @relation(fields: [deviceId], references: [id])
+
+  @@index([deviceId, createdAt])
+  @@index([read])
 }
 
 model AuditEvent {
-  id         String   @id @default(uuid()) @db.Uuid
-  entityType String
-  entityId   String
-  action     String
-  actorDID   String?
-  payload    Json?
-  previousHash String
-  hash       String
-  signature  String
-  userId     String?  @db.Uuid
-  createdAt  DateTime @default(now())
+  id            String   @id @default(uuid()) @db.Uuid
+  entityType    String
+  entityId      String
+  action        String
+  actorDID      String?
+  payload       Json?
+  previousHash  String   @default("genesis")
+  hash          String
+  signature     String   @default("")
+  signKey       String   @default("")
+  userSignature String?           @db.Text
+  userDid       String?
+  userId        String?  @db.Uuid
+  createdAt     DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 model ProcessingRegister {

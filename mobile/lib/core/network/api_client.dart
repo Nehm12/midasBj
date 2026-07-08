@@ -1,12 +1,11 @@
-/**
- * Client HTTP pour communiquer avec l'API REST du backend.
- *
- * Utilise Dio avec :
- * - URL de base configurable (10.0.2.2 pour émulateur Android,
- *   localhost pour web/Linux)
- * - Timeouts de 10 secondes
- * - Intercepteur qui ajoute le token JWT depuis le stockage sécurisé
- */
+/// Client HTTP pour communiquer avec l'API REST du backend.
+///
+/// Utilise Dio avec :
+/// - URL de base configurable (10.0.2.2 pour émulateur Android,
+///   localhost pour web/Linux)
+/// - Timeouts de 10 secondes
+/// - Intercepteur qui ajoute le token JWT depuis le stockage sécurisé
+library;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
