@@ -54,8 +54,11 @@ async function main() {
     index: ['index.html'],
     decorateReply: true,
   });
+
+  // --- GET API Console ---
   app.get('/console', async (_req, reply) => reply.redirect('/console/'));
-  app.get('/console/*', async (_req, reply) => reply.sendFile('index.html'));
+
+
 
   // --- Enregistrement de toutes les routes métier ---
   await app.register(apiRoutes, { prefix: '/api/v1' });
