@@ -1,37 +1,33 @@
-/// Client HTTP pour communiquer avec l'API REST du backend.
-///
-/// Utilise Dio avec :
-/// - URL de base configurable (10.0.2.2 pour émulateur Android,
-///   localhost pour web/Linux)
-/// - Timeouts de 10 secondes
-/// - Intercepteur qui ajoute le token JWT depuis le stockage sécurisé
 library;
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'backend_config.dart';
 
 const _kBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:3000/api/v1',
+  defaultValue: '',
 );
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
 class ApiClient {
-  late final Dio _dio;
+  late Dio _dio;
   final _secure = const FlutterSecureStorage();
+  String _currentUrl;
+  bool _switched = false;
 
-  ApiClient() {
-    // Sur le web, on utilise localhost car le navigateur tourne sur la machine
-    final effectiveUrl = kIsWeb ? 'http://localhost:3000/api/v1' : _kBaseUrl;
+  ApiClient() : _currentUrl = _kBaseUrl.isNotEmpty ? _kBaseUrl : primaryApiUrl {
+    _initDio();
+  }
+
+  void _initDio() {
     _dio = Dio(BaseOptions(
-      baseUrl: effectiveUrl,
-      connectTimeout: const Duration(seconds: 10),
+      baseUrl: _currentUrl,
+      connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 10),
       headers: {'Content-Type': 'application/json'},
     ));
-    // Ajoute le token JWT à chaque requête
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await _secure.read(key: 'auth_token');
@@ -40,7 +36,19 @@ class ApiClient {
         }
         handler.next(options);
       },
-      onError: (error, handler) {
+      onError: (error, handler) async {
+        if (!_switched && (error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.connectionError)) {
+          _switched = true;
+          _currentUrl = fallbackApiUrl;
+          _initDio();
+          try {
+            final retryOptions = error.requestOptions;
+            final response = await _dio.fetch(retryOptions);
+            handler.resolve(response);
+            return;
+          } catch (_) {}
+        }
         handler.next(error);
       },
     ));

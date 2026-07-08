@@ -1,18 +1,14 @@
-/// Client MQTT pour la communication avec les appareils IoT.
-///
-/// Se connecte au broker MQTT du backend, s'abonne aux topics
-/// de télémétrie et notifie l'application via un Stream broadcast.
 library;
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'backend_config.dart';
 
 const _kMqttHost = String.fromEnvironment(
   'MQTT_HOST',
-  defaultValue: '10.0.2.2',
+  defaultValue: '',
 );
 
 const _kMqttPort = int.fromEnvironment(
@@ -28,9 +24,16 @@ class MqttService {
 
   Stream<Map<String, dynamic>> get dataStream => _controller.stream;
 
-  /// Se connecte au broker et s'abonne aux données IoT
   Future<void> connect(String deviceId) async {
-    final host = kIsWeb ? 'localhost' : _kMqttHost;
+    final primaryHost = _kMqttHost.isNotEmpty ? _kMqttHost : primaryMqttHost;
+    try {
+      await _doConnect(primaryHost, deviceId);
+    } catch (_) {
+      await _doConnect(fallbackMqttHost, deviceId);
+    }
+  }
+
+  Future<void> _doConnect(String host, String deviceId) async {
     _client = MqttServerClient(host, 'flutter_$deviceId');
     _client!.port = _kMqttPort;
     _client!.secure = false;
@@ -41,23 +44,16 @@ class MqttService {
         .startClean();
     _client!.connectionMessage = connMessage;
 
-    try {
-      await _client!.connect();
-      _client!.subscribe('midas/+/telemetry', MqttQos.atLeastOnce);
+    await _client!.connect();
+    _client!.subscribe('midas/+/telemetry', MqttQos.atLeastOnce);
 
-      _client!.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-        final rec = c[0].payload as MqttPublishMessage;
-        final payload = utf8.decode(rec.payload.message);
-        _controller.add(jsonDecode(payload) as Map<String, dynamic>);
-      });
-    } catch (e) {
-      // Le log est volontairement laissé pour le débogage mobile
-      // ignore: avoid_print
-      print('MQTT connection failed: $e');
-    }
+    _client!.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+      final rec = c[0].payload as MqttPublishMessage;
+      final payload = utf8.decode(rec.payload.message);
+      _controller.add(jsonDecode(payload) as Map<String, dynamic>);
+    });
   }
 
-  /// Publie un message sur un topic MQTT
   Future<void> publish(String topic, Map<String, dynamic> message) async {
     final builder = MqttClientPayloadBuilder();
     builder.addString(jsonEncode(message));
