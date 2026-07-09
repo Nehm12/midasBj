@@ -31,9 +31,18 @@ export const authService = {
   },
 
   async login({ npi, signature }: { npi: string; signature: string }) {
-    const user = await prisma.user.findUniqueOrThrow({ where: { npi } });
+    const user = await prisma.user.findUnique({ where: { npi } });
+    if (!user) {
+      const err = new Error('Utilisateur non trouvé. Enrôlez-vous d\'abord.');
+      (err as any).statusCode = 401;
+      throw err;
+    }
     const isValid = ed25519Crypto.verify(user.publicKey, npi, signature);
-    if (!isValid) throw new Error('Invalid signature');
+    if (!isValid) {
+      const err = new Error('Signature invalide');
+      (err as any).statusCode = 401;
+      throw err;
+    }
     const token = jwt.sign(
       { sub: user.id, did: user.did, npi: user.npi, roles: ['citizen'] },
       config.JWT_SECRET,
@@ -43,7 +52,12 @@ export const authService = {
   },
 
   async loginSimple(npi: string) {
-    const user = await prisma.user.findUniqueOrThrow({ where: { npi } });
+    const user = await prisma.user.findUnique({ where: { npi } });
+    if (!user) {
+      const err = new Error('Utilisateur non trouvé. Enrôlez-vous d\'abord.');
+      (err as any).statusCode = 401;
+      throw err;
+    }
     const token = jwt.sign(
       { sub: user.id, did: user.did, npi: user.npi, roles: ['citizen'] },
       config.JWT_SECRET,
@@ -58,14 +72,24 @@ export const authService = {
 
   async validateSession(token: string) {
     const payload = jwt.verify(token, config.JWT_SECRET) as jwt.JwtPayload;
-    const user = await prisma.user.findUniqueOrThrow({
+    const user = await prisma.user.findUnique({
       where: { id: payload.sub },
     });
+    if (!user) {
+      const err = new Error('Session invalide. Utilisateur introuvable.');
+      (err as any).statusCode = 401;
+      throw err;
+    }
     return { id: user.id, did: user.did, npi: user.npi, roles: payload.roles ?? ['citizen'] };
   },
 
   async rotateKey({ userId, newPublicKey }: { userId: string; newPublicKey: string }) {
-    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      const err = new Error('Utilisateur introuvable.');
+      (err as any).statusCode = 404;
+      throw err;
+    }
     await prisma.user.update({
       where: { id: userId },
       data: { publicKey: newPublicKey },

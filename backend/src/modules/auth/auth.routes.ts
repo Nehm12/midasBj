@@ -1,6 +1,7 @@
 /**
  * Routes du module d'authentification.
  *
+ * GET  /auth/health        → Health check
  * POST /auth/register      → Enrôlement (NPI + clé publique)
  * POST /auth/login         → Connexion (signature Ed25519)
  * POST /auth/login-simple  → Connexion simplifiée (NPI seulement, dev/test)
@@ -14,6 +15,12 @@ import { authService } from './auth.service.js';
 import { authMiddleware } from '../../infrastructure/auth/middleware.js';
 
 export async function authRoutes(app: FastifyInstance) {
+
+  app.get('/auth/health', async () => ({
+    status: 'ok',
+    service: 'auth',
+    timestamp: new Date().toISOString(),
+  }));
 
   app.post('/auth/register', async (request, reply) => {
     const { npi, publicKey } = request.body as { npi: string; publicKey: string };

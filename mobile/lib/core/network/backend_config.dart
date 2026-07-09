@@ -1,21 +1,14 @@
 library;
-import 'package:flutter/foundation.dart';
 
-const _kLocalApiUrl = 'http://10.0.2.2:3000/api/v1';
-const _kWebApiUrl = 'http://localhost:3000/api/v1';
-const _kRemoteApiUrl = 'https://midasbj.onrender.com/api/v1';
+const _kApiUrl = 'https://midasbj.onrender.com/api/v1';
+const _kKeycloakUrl = 'https://midasbj.onrender.com';
+const _kMqttHost = 'midasbj.onrender.com';
 
-const _kLocalKeycloakUrl = 'http://localhost:8080';
-const _kRemoteKeycloakUrl = 'https://midasbj.onrender.com';
+String get primaryApiUrl => _kApiUrl;
+String get fallbackApiUrl => _kApiUrl;
 
-const _kLocalMqttHost = '10.0.2.2';
-const _kRemoteMqttHost = 'midasbj.onrender.com';
+String get primaryKeycloakUrl => _kKeycloakUrl;
+String get fallbackKeycloakUrl => _kKeycloakUrl;
 
-String get primaryApiUrl => kIsWeb ? _kWebApiUrl : _kLocalApiUrl;
-String get fallbackApiUrl => _kRemoteApiUrl;
-
-String get primaryKeycloakUrl => _kLocalKeycloakUrl;
-String get fallbackKeycloakUrl => _kRemoteKeycloakUrl;
-
-String get primaryMqttHost => kIsWeb ? 'localhost' : _kLocalMqttHost;
-String get fallbackMqttHost => _kRemoteMqttHost;
+String get primaryMqttHost => _kMqttHost;
+String get fallbackMqttHost => _kMqttHost;

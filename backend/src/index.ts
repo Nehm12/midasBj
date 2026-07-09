@@ -58,7 +58,9 @@ async function main() {
   // --- GET API Console ---
   app.get('/console', async (_req, reply) => reply.redirect('/console/'));
 
-
+  // --- Health check racine (pour Render / load balancers) ---
+  app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+  app.get('/', async () => ({ status: 'ok', service: 'midas-benin-backend' }));
 
   // --- Enregistrement de toutes les routes métier ---
   await app.register(apiRoutes, { prefix: '/api/v1' });
@@ -69,6 +71,15 @@ async function main() {
   // --- Gestion centralisée des erreurs ---
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error);
+
+    const prismaCode = (error as any).code;
+    if (prismaCode === 'P2025') {
+      return reply.status(404).send({ error: 'Ressource non trouvée', statusCode: 404 });
+    }
+    if (prismaCode === 'P2002') {
+      return reply.status(409).send({ error: 'Cette ressource existe déjà', statusCode: 409 });
+    }
+
     reply.status(error.statusCode ?? 500).send({
       error: error.message ?? 'Internal Server Error',
       statusCode: error.statusCode ?? 500,

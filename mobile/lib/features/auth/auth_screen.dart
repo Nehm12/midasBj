@@ -16,6 +16,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -317,6 +318,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   void _handleAuth(WidgetRef ref, String mode, String npi) {
+    if (_submitting) return;
+    _submitting = true;
     final notifier = ref.read(authProvider.notifier);
     switch (mode) {
       case 'enroll':
@@ -329,5 +332,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
         notifier.loginSimple(npi);
         break;
     }
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _submitting = false);
+    });
   }
 }
