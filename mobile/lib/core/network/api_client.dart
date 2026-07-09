@@ -1,5 +1,6 @@
 library;
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'backend_config.dart';
@@ -13,11 +14,14 @@ final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
 class ApiClient {
   late Dio _dio;
-  final _secure = const FlutterSecureStorage();
+  final _secure = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
   String _currentUrl;
   bool _switched = false;
 
   ApiClient() : _currentUrl = _kBaseUrl.isNotEmpty ? _kBaseUrl : primaryApiUrl {
+    debugPrint('🌐 ApiClient using URL: $_currentUrl');
     _initDio();
   }
 
@@ -30,11 +34,16 @@ class ApiClient {
     ));
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        debugPrint('🌐 REQ ${options.method} ${options.baseUrl}${options.path}');
         final token = await _secure.read(key: 'auth_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         handler.next(options);
+      },
+      onResponse: (response, handler) {
+        debugPrint('🌐 RES ${response.statusCode} ${response.requestOptions.path}');
+        handler.next(response);
       },
       onError: (error, handler) async {
         if (!_switched && (error.type == DioExceptionType.connectionTimeout ||

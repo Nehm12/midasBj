@@ -36,7 +36,12 @@ class WalletNotifier extends StateNotifier<WalletState> {
       : super(WalletState(
           did: authState.did,
           npi: authState.npi,
-        ));
+        )) {
+    if (authState.status == AuthStatus.authenticated && authState.npi != null) {
+      _initialLoadDone = true;
+      loadWallet();
+    }
+  }
 
   void syncAuth(AuthState authState) {
     final isFirstLoad = !_initialLoadDone;
@@ -147,8 +152,8 @@ class WalletNotifier extends StateNotifier<WalletState> {
     cipher.init(
       true,
       pc.PaddedBlockCipherParameters(
-        pc.KeyParameter(key),
         pc.ParametersWithIV(pc.KeyParameter(key), iv),
+        null,
       ),
     );
 
@@ -184,8 +189,8 @@ class WalletNotifier extends StateNotifier<WalletState> {
     cipher.init(
       false,
       pc.PaddedBlockCipherParameters(
-        pc.KeyParameter(key),
         pc.ParametersWithIV(pc.KeyParameter(key), iv),
+        null,
       ),
     );
 
