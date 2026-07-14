@@ -33,51 +33,54 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  width: 100%;
 }
 
 /* ═══════ LOGIN PAGE ═══════ */
 .login-page {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #1f2937 0%, #8B1A1A 100%);
+  padding: 20px;
 }
 .login-card {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  padding: 40px;
-  width: 400px;
-  max-width: 90vw;
-  box-shadow: var(--shadow-lg);
+  padding: 40px 36px;
+  width: 420px;
+  max-width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
 }
 .login-logo { text-align: center; margin-bottom: 32px; }
 .login-logo-icon {
-  width: 64px; height: 64px;
+  width: 60px; height: 60px;
   background: var(--red);
   color: white;
-  border-radius: 16px;
+  border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 28px;
-  margin-bottom: 16px;
+  font-size: 26px;
+  margin-bottom: 14px;
 }
-.login-logo h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-.login-subtitle { color: var(--text-muted); font-size: 13px; }
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+.login-logo h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+.login-subtitle { color: var(--text-muted); font-size: 12px; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
 .login-error {
   background: var(--red-light);
   color: var(--red);
   padding: 10px 14px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12px;
   margin-bottom: 16px;
   border: 1px solid #fecaca;
 }
-.login-footer { text-align: center; margin-top: 24px; color: var(--text-muted); }
+.login-footer { text-align: center; margin-top: 24px; color: var(--text-muted); font-size: 11px; }
 
 /* ═══════ APP SHELL ═══════ */
 .app-shell { display: flex; min-height: 100vh; }
@@ -268,6 +271,7 @@ nav { flex: 1; display: flex; flex-direction: column; gap: 2px; }
   background: var(--surface);
   color: var(--text);
   outline: none;
+  width: 100%;
 }
 .input:focus { border-color: var(--red); }
 .input-lg { padding: 10px 14px; font-size: 14px; }
