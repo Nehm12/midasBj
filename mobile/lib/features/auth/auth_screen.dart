@@ -171,7 +171,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       width: double.infinity,
                       height: 52,
                       child: OutlinedButton.icon(
-                        onPressed: () => _loginWithKeycloak(context, ref),
+                        onPressed: () => context.push('/auth/keycloak'),
                         icon: const Icon(Icons.admin_panel_settings_outlined, size: 20),
                         label: const Text(
                           'SSO Keycloak',
@@ -211,31 +211,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 
-  Future<void> _loginWithKeycloak(BuildContext context, WidgetRef ref) async {
-    try {
-      const token = 'placeholder-keycloak-token';
-      await ref.read(authProvider.notifier).loginWithKeycloak(token);
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur Keycloak: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
-
   Future<void> _biometricLogin(BuildContext context, WidgetRef ref) async {
     final notifier = ref.read(authProvider.notifier);
-    final ok = await notifier.authenticateBiometric();
+    final ok = await notifier.loginWithBiometric();
     if (ok && context.mounted) {
+      context.go('/wallet');
+    } else if (!ok && context.mounted) {
+      final error = ref.read(authProvider).error;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Authentification biométrique réussie'),
-          backgroundColor: Colors.green,
+          content: Text(error ?? 'Échec de l\'authentification biométrique'),
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );

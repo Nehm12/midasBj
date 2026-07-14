@@ -6,10 +6,13 @@
  * - Persister les données reçues dans PostgreSQL via Prisma
  * - Mettre à jour le timestamp lastSeenAt de l'appareil
  *
- * Les appareils doivent envoyer : { ciphertext, nonce, signature }
+ * Supporte TCP (port 1883) et WebSocket (port 8084)
+ * pour la compatibilité avec Render (qui bloque le TCP pur).
  */
 import Aedes, { Client, PublishPacket } from 'aedes';
-import { createServer } from 'node:net';
+import { createServer } from 'net';
+import { createServer as createHttpServer } from 'http';
+import { WebSocketServer } from 'ws';
 import { FastifyInstance } from 'fastify';
 import config from '../../config/index.js';
 import prisma from '../db/client.js';
@@ -17,7 +20,18 @@ import prisma from '../db/client.js';
 const aedes = new Aedes();
 
 export async function startMqttBroker(app: FastifyInstance) {
-  const server = createServer(aedes.handle);
+  // TCP server (port 1883) — pour les appareils IoT en local
+  const tcpServer = createServer(aedes.handle);
+
+  // WebSocket server (port 8084) — pour les apps mobiles / Render
+  const httpServer = createHttpServer();
+  const wss = new WebSocketServer({ noServer: true });
+
+  httpServer.on('upgrade', (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      aedes.handle(ws as any);
+    });
+  });
 
   aedes.on('client', (client: Client) => {
     app.log.info(`MQTT client connected: ${client.id}`);
@@ -48,10 +62,15 @@ export async function startMqttBroker(app: FastifyInstance) {
     }
   });
 
+  const wsPort = config.MQTT_PORT + 1;
+
   return new Promise<void>((resolve) => {
-    server.listen(config.MQTT_PORT, () => {
-      app.log.info(`MQTT broker listening on port ${config.MQTT_PORT}`);
-      resolve();
+    tcpServer.listen(config.MQTT_PORT, () => {
+      app.log.info(`MQTT broker (TCP) listening on port ${config.MQTT_PORT}`);
+      httpServer.listen(wsPort, () => {
+        app.log.info(`MQTT broker (WebSocket) listening on port ${wsPort}`);
+        resolve();
+      });
     });
   });
 }

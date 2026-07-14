@@ -62,6 +62,7 @@ services:
     ports:
       - '3000:3000'
       - '1883:1883'
+      - '8084:8084'
     volumes:
       - ./src:/app/src
     depends_on:

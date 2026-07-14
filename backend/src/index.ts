@@ -19,6 +19,7 @@ import config from './config/index.js';
 import { apiRoutes } from './api/routes/index.js';
 import { startMqttBroker } from './infrastructure/mqtt/broker.js';
 import { registerWebSocketRoutes } from './infrastructure/ws/alerts.js';
+import { logCollector } from './infrastructure/logs/collector.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +30,34 @@ async function main() {
   await app.register(cors, { origin: true });
   await app.register(helmet);
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
+
+  // --- Collecte automatique des logs ---
+  logCollector.info('system', 'Démarrage du serveur MIDAS-Bénin', {
+    port: config.PORT,
+    host: config.HOST,
+    env: config.NODE_ENV,
+  });
+
+  app.addHook('onResponse', async (request, reply) => {
+    const isApi = request.url.startsWith('/api/');
+    const isHealth = request.url === '/health' || request.url === '/';
+    if (isApi && !isHealth) {
+      const level = reply.statusCode >= 500 ? 'error' : reply.statusCode >= 400 ? 'warn' : 'info';
+      logCollector[level]('http', `${request.method} ${request.url}`, {
+        statusCode: reply.statusCode,
+        ip: request.ip,
+        userAgent: request.headers['user-agent']?.substring(0, 80),
+        duration: Math.round(reply.elapsedTime),
+      });
+    }
+  });
+
+  app.addHook('onError', async (_request, reply, error) => {
+    logCollector.error('system', `Erreur serveur: ${error.message}`, {
+      statusCode: reply.statusCode,
+      stack: error.stack?.substring(0, 200),
+    });
+  });
 
   // --- WebSocket pour alertes temps réel ---
   await app.register(fastifyWebsocket);

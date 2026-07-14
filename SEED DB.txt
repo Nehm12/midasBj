@@ -1,6 +1,4 @@
 SEED DB
-
-
 NPI	DID	Clés
 NPIBENIN202400001 (Alice)	did:midas:benin:NPIBENIN202400001	Générées à chaque seed
 NPIBENIN202400002 (Bob)	did:midas:benin:NPIBENIN202400002	Générées à chaque seed
@@ -14,4 +12,23 @@ NPIBENIN202400002 (Bob)	did:midas:benin:NPIBENIN202400002	Générées à chaque 
 [ ] Phase 5 - Sécurité, tests, conformité juridique
 [ ] Phase 6 - Déploiement MVP et documentation
 
+
+
+https://www.youtube.com/watch?v=vso1P98Xjos
+
+https://www.youtube.com/watch?v=mtW-T-RI7Es
+
+Nous sommes Nou..... Hounga et nous defendons pour nos travaux de fin de licence portant sur la 
+Merci pour cette question tres precise, ca temoigne de l'attention que vous aviez pour notre document. 
+
+President du jury : SOTINDJO Patrick
+Examinateur : Fidèle HOUNSOUNOU
+
+
+PReparer arguments EasyLMD solide 
+Mots en anglais 
+Bibliographie du travail
+Dédicace a reprendre 
+Diagramme de cas segmente pour un profil c'est touffu
+Diagramme de classes. TOUT donc on arive pas lire
 

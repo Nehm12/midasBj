@@ -17,7 +17,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY start.sh ./start.sh
 RUN chmod +x start.sh
-EXPOSE 3000 1883
+EXPOSE 3000 1883 8084
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 CMD ["./start.sh"]

@@ -34,7 +34,8 @@ export const consentService = {
 
   async requestConsent(data: {
     citizenId: string;
-    providerDID: string;
+    providerDID?: string;
+    providerDomain?: string | null;
     purpose: string;
     dataClasses: string[];
     consentType: ConsentType;
@@ -52,10 +53,14 @@ export const consentService = {
       ? null
       : new Date(Date.now() + duration * 1000);
 
+    const providerDID = data.providerDID
+      || (data.providerDomain ? `did:web:${data.providerDomain}` : '');
+
     const consent = await prisma.consent.create({
       data: {
         citizenId: data.citizenId,
-        providerDID: data.providerDID,
+        providerDID,
+        providerDomain: data.providerDomain ?? null,
         purpose: data.purpose,
         dataClasses: data.dataClasses,
         consentType: data.consentType,
@@ -70,7 +75,8 @@ export const consentService = {
     const workflowCtx: Record<string, unknown> = {
       consentId: consent.id,
       citizenId: data.citizenId,
-      providerDID: data.providerDID,
+      providerDID,
+      providerDomain: data.providerDomain ?? null,
       purpose: data.purpose,
       dataClasses: data.dataClasses,
       consentType: data.consentType,
@@ -270,6 +276,7 @@ export const consentService = {
       consents: consents.map(c => ({
         id: c.id,
         providerDID: c.providerDID,
+        providerDomain: c.providerDomain,
         purpose: c.purpose,
         dataClasses: c.dataClasses,
         consentType: c.consentType,

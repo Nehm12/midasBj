@@ -3,132 +3,248 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APDP Console — MIDAS-Benin</title>
+<title>MIDAS Console — Administration</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<aside class="sidebar">
-  <div class="logo">
-    <div class="logo-icon">M</div>
-    <div class="logo-text">
-      <strong>MIDAS</strong>
-      <small>Console APDP</small>
-    </div>
-  </div>
-  <nav>
-    <a href="#" class="nav-item active" data-page="dashboard">
-      <span class="nav-icon nav-icon-dashboard"></span> Tableau de bord
-    </a>
-    <a href="#" class="nav-item" data-page="audit">
-      <span class="nav-icon nav-icon-audit"></span> Piste d'audit
-    </a>
-    <a href="#" class="nav-item" data-page="violations">
-      <span class="nav-icon nav-icon-violations"></span> Violations
-    </a>
-    <a href="#" class="nav-item" data-page="verify">
-      <span class="nav-icon nav-icon-verify"></span> Verification
-    </a>
-    <a href="#" class="nav-item" data-page="entities">
-      <span class="nav-icon nav-icon-entities"></span> Types d'entites
-    </a>
-  </nav>
-  <div class="sidebar-footer">
-    <div class="status-dot" id="statusDot"></div>
-    <span id="statusText">Connecte</span>
-  </div>
-</aside>
 
-<main class="main-content">
-  <header class="topbar">
-    <h1 id="pageTitle">Tableau de bord</h1>
-    <div class="topbar-actions">
-      <button class="btn btn-outline" onclick="refreshCurrentPage()">Actualiser</button>
-      <span class="api-base">API: /api/v1</span>
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PAGE DE CONNEXION -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="loginPage" class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">M</div>
+      <h1>MIDAS-Bénin</h1>
+      <p class="login-subtitle">Console d'administration — APDP</p>
     </div>
-  </header>
-
-  <div class="page active" id="page-dashboard">
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-value" id="totalEvents">—</div>
-        <div class="stat-label">Evenements d'audit</div>
+    <form id="loginForm" onsubmit="return handleLogin(event)">
+      <div class="form-group">
+        <label for="loginUser">Identifiant</label>
+        <input type="text" id="loginUser" class="input input-lg" placeholder="admin" autocomplete="username" required>
       </div>
-      <div class="stat-card">
-        <div class="stat-value" id="totalViolations">—</div>
-        <div class="stat-label">Violations</div>
+      <div class="form-group">
+        <label for="loginPass">Mot de passe</label>
+        <input type="password" id="loginPass" class="input input-lg" placeholder="••••••••" autocomplete="current-password" required>
       </div>
-      <div class="stat-card">
-        <div class="stat-value" id="totalEntities">—</div>
-        <div class="stat-label">Types d'entites</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="chainStatus">—</div>
-        <div class="stat-label">Chaine d'audit</div>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Activite recente</h3>
-      <div id="recentEvents"><p class="muted">Chargement...</p></div>
+      <div id="loginError" class="login-error" style="display:none"></div>
+      <button type="submit" class="btn btn-primary btn-lg btn-block" id="loginBtn">Connexion</button>
+    </form>
+    <div class="login-footer">
+      <small>Système Souverain d'Identité numérique — Bénin</small>
     </div>
   </div>
+</div>
 
-  <div class="page" id="page-audit">
-    <div class="card">
-      <div class="filter-bar">
-        <input type="text" id="auditSearch" placeholder="Rechercher par ID d'entite..." class="input">
-        <select id="auditEntityType" class="input">
-          <option value="">Tous les types</option>
-        </select>
-        <select id="auditAction" class="input">
-          <option value="">Toutes les actions</option>
-          <option value="LOGIN">Connexion</option>
-          <option value="ACCESS">Acces</option>
-          <option value="CREATE">Creation</option>
-          <option value="DELETE">Suppression</option>
-          <option value="BREACH">Violation</option>
-        </select>
-        <input type="date" id="auditFrom" class="input" style="max-width:160px">
-        <input type="date" id="auditTo" class="input" style="max-width:160px">
-        <button class="btn btn-primary" onclick="searchAudit()">Rechercher</button>
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- APPLICATION PRINCIPALE (après connexion) -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="appShell" class="app-shell" style="display:none">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">M</div>
+      <div class="logo-text">
+        <strong>MIDAS</strong>
+        <small>Console Admin</small>
       </div>
-      <div id="auditResults"><p class="muted">Effectuez une recherche pour afficher les resultats.</p></div>
     </div>
-  </div>
-
-  <div class="page" id="page-violations">
-    <div class="card">
-      <h3>Violations detectees</h3>
-      <button class="btn btn-primary" onclick="loadViolations()" style="margin-bottom:16px">Actualiser</button>
-      <div id="violationsList"><p class="muted">Aucune violation detectee.</p></div>
+    <nav>
+      <a href="#" class="nav-item active" data-page="dashboard">Tableau de bord</a>
+      <a href="#" class="nav-item" data-page="audit">Piste d'audit</a>
+      <a href="#" class="nav-item" data-page="violations">Violations</a>
+      <a href="#" class="nav-item" data-page="logs">Journal serveur</a>
+      <a href="#" class="nav-item" data-page="entities">Types d'entites</a>
+      <a href="#" class="nav-item" data-page="users">Utilisateurs</a>
+      <a href="#" class="nav-item" data-page="consents">Consentements</a>
+      <a href="#" class="nav-item" data-page="iot">Donnees IoT</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Connecté</span>
+      <button class="btn-logout" onclick="handleLogout()" title="Deconnexion">X</button>
     </div>
-  </div>
+  </aside>
 
-  <div class="page" id="page-verify">
-    <div class="card">
-      <h3>Verifier l'integrite d'une chaine d'audit</h3>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <input type="text" id="verifyEntityId" placeholder="ID de l'entite" class="input" style="flex:1">
-        <button class="btn btn-primary" onclick="verifyChain()">Verifier</button>
+  <main class="main-content">
+    <header class="topbar">
+      <h1 id="pageTitle">Tableau de bord</h1>
+      <div class="topbar-actions">
+        <span class="admin-badge">Admin</span>
+        <button class="btn btn-outline btn-sm" onclick="refreshCurrentPage()">Actualiser</button>
       </div>
-      <div id="verifyResult" style="margin-top:16px"></div>
-    </div>
-    <div class="card">
-      <h3>Exporter une preuve d'audit</h3>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <input type="text" id="exportEntityId" placeholder="ID de l'entite" class="input" style="flex:1">
-        <button class="btn btn-primary" onclick="exportProof()">Exporter JSON-LD</button>
-      </div>
-      <div id="exportResult" style="margin-top:16px"></div>
-    </div>
-  </div>
+    </header>
 
-  <div class="page" id="page-entities">
-    <div class="card">
-      <h3>Types d'entites suivies</h3>
-      <div id="entityTypesList"><p class="muted">Chargement...</p></div>
+    <!-- ── DASHBOARD ── -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card stat-red">
+          <div class="stat-value" id="totalAuditEvents">—</div>
+          <div class="stat-label">Événements d'audit</div>
+        </div>
+        <div class="stat-card stat-orange">
+          <div class="stat-value" id="totalViolations">—</div>
+          <div class="stat-label">Violations</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-value" id="totalUsers">—</div>
+          <div class="stat-label">Utilisateurs</div>
+        </div>
+        <div class="stat-card stat-blue">
+          <div class="stat-value" id="totalConsents">—</div>
+          <div class="stat-label">Consentements</div>
+        </div>
+        <div class="stat-card stat-purple">
+          <div class="stat-value" id="totalIotDevices">—</div>
+          <div class="stat-label">Appareils IoT</div>
+        </div>
+        <div class="stat-card stat-teal">
+          <div class="stat-value" id="chainStatus">—</div>
+          <div class="stat-label">Chaîne d'audit</div>
+        </div>
+      </div>
+
+      <div class="grid-2col">
+        <div class="card">
+          <h3>Activite recente (24h)</h3>
+          <div class="mini-stats" id="logStats24h">
+            <div class="mini-stat"><span class="mini-val" id="logsTotal24h">—</span><span class="mini-label">Total</span></div>
+            <div class="mini-stat mini-error"><span class="mini-val" id="logsErrors24h">—</span><span class="mini-label">Erreurs</span></div>
+            <div class="mini-stat mini-warn"><span class="mini-val" id="logsWarnings24h">—</span><span class="mini-label">Warnings</span></div>
+          </div>
+          <div class="log-breakdown" id="logBreakdown"></div>
+        </div>
+        <div class="card">
+          <h3>Entites suivies</h3>
+          <div id="entityBreakdown"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Derniers evenements</h3>
+        <div id="recentEvents"><p class="muted">Chargement...</p></div>
+      </div>
     </div>
-  </div>
-</main>
+
+    <!-- ── AUDIT ── -->
+    <div class="page" id="page-audit">
+      <div class="card">
+        <div class="filter-bar">
+          <input type="text" id="auditSearch" placeholder="Rechercher par ID d'entité..." class="input">
+          <select id="auditEntityType" class="input"><option value="">Tous les types</option></select>
+          <select id="auditAction" class="input">
+            <option value="">Toutes les actions</option>
+            <option value="LOGIN">Connexion</option>
+            <option value="ACCESS">Accès</option>
+            <option value="CREATE">Création</option>
+            <option value="REGISTER">Enregistrement</option>
+            <option value="DELETE">Suppression</option>
+            <option value="PAIR">Appairage</option>
+            <option value="DENIED">Accès refusé</option>
+            <option value="FAILED">Échec</option>
+            <option value="BREACH">Violation</option>
+            <option value="CONSENT">Consentement</option>
+          </select>
+          <input type="date" id="auditFrom" class="input" style="max-width:160px">
+          <input type="date" id="auditTo" class="input" style="max-width:160px">
+          <button class="btn btn-primary" onclick="searchAudit()">Rechercher</button>
+        </div>
+        <div id="auditResults"><p class="muted">Effectuez une recherche pour afficher les résultats.</p></div>
+      </div>
+    </div>
+
+    <!-- ── VIOLATIONS ── -->
+    <div class="page" id="page-violations">
+      <div class="card">
+        <h3>Violations detectees</h3>
+        <button class="btn btn-primary btn-sm" onclick="loadViolations()" style="margin-bottom:16px">Actualiser</button>
+        <div id="violationsList"><p class="muted">Aucune violation détectée.</p></div>
+      </div>
+    </div>
+
+    <!-- ── JOURNAL SERVEUR ── -->
+    <div class="page" id="page-logs">
+      <div class="stats-grid stats-grid-4">
+        <div class="stat-card stat-red compact">
+          <div class="stat-value" id="logStatTotal">—</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card stat-orange compact">
+          <div class="stat-value" id="logStatErrors">—</div>
+          <div class="stat-label">Erreurs (24h)</div>
+        </div>
+        <div class="stat-card stat-blue compact">
+          <div class="stat-value" id="logStatHttp">—</div>
+          <div class="stat-label">Requêtes HTTP</div>
+        </div>
+        <div class="stat-card stat-green compact">
+          <div class="stat-value" id="logStatAuth">—</div>
+          <div class="stat-label">Authentifications</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="filter-bar">
+          <select id="logLevel" class="input">
+            <option value="">Tous les niveaux</option>
+            <option value="info">Info</option>
+            <option value="warn">Warning</option>
+            <option value="error">Erreur</option>
+            <option value="debug">Debug</option>
+          </select>
+          <select id="logCategory" class="input">
+            <option value="">Toutes les catégories</option>
+            <option value="http">HTTP</option>
+            <option value="auth">Auth</option>
+            <option value="audit">Audit</option>
+            <option value="iot">IoT</option>
+            <option value="system">Système</option>
+            <option value="admin">Admin</option>
+          </select>
+          <input type="text" id="logSearch" placeholder="Rechercher..." class="input" style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="loadLogs()">Filtrer</button>
+          <button class="btn btn-outline btn-sm" onclick="clearLogs()">Vider</button>
+          <label class="toggle-label"><input type="checkbox" id="logAutoRefresh" checked> Auto-refresh</label>
+        </div>
+        <div id="logEntries"><p class="muted">Chargement des logs...</p></div>
+      </div>
+    </div>
+
+    <!-- ── TYPES D'ENTITÉS ── -->
+    <div class="page" id="page-entities">
+      <div class="card">
+        <h3>Types d'entites suivies</h3>
+        <div id="entityTypesList"><p class="muted">Chargement...</p></div>
+      </div>
+    </div>
+
+    <!-- ── UTILISATEURS ── -->
+    <div class="page" id="page-users">
+      <div class="card">
+        <h3>Utilisateurs enregistres</h3>
+        <button class="btn btn-primary btn-sm" onclick="loadUsers()" style="margin-bottom:16px">Actualiser</button>
+        <div id="usersList"><p class="muted">Chargement...</p></div>
+      </div>
+    </div>
+
+    <!-- ── CONSENTEMENTS ── -->
+    <div class="page" id="page-consents">
+      <div class="card">
+        <h3>Consentements</h3>
+        <button class="btn btn-primary btn-sm" onclick="loadConsents()" style="margin-bottom:16px">Actualiser</button>
+        <div id="consentsList"><p class="muted">Chargement...</p></div>
+      </div>
+    </div>
+
+    <!-- ── DONNÉES IOT ── -->
+    <div class="page" id="page-iot">
+      <div class="card">
+        <h3>Donnees IoT</h3>
+        <button class="btn btn-primary btn-sm" onclick="loadIotData()" style="margin-bottom:16px">Actualiser</button>
+        <div id="iotDataList"><p class="muted">Chargement...</p></div>
+      </div>
+    </div>
+  </main>
+</div>
 
 <div id="loadingOverlay" class="loading-overlay hidden">
   <div class="spinner"></div>

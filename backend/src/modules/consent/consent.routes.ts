@@ -7,13 +7,15 @@ export async function consentRoutes(app: FastifyInstance) {
   app.post('/consent/request', { preHandler: authMiddleware }, async (request, reply) => {
     const {
       providerDID,
+      providerDomain,
       purpose,
       dataClasses,
       consentType,
       duration,
       maxUsageCount,
     } = request.body as {
-      providerDID: string;
+      providerDID?: string;
+      providerDomain?: string;
       purpose: string;
       dataClasses?: string[];
       consentType?: ConsentType;
@@ -23,7 +25,8 @@ export async function consentRoutes(app: FastifyInstance) {
     const citizenId = request.user!.sub;
     const result = await consentService.requestConsent({
       citizenId,
-      providerDID,
+      providerDID: providerDID ?? '',
+      providerDomain: providerDomain ?? null,
       purpose,
       dataClasses: dataClasses ?? [],
       consentType: consentType ?? ConsentType.TEMPORARY,

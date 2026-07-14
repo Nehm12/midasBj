@@ -11,7 +11,7 @@ class ConsentScreen extends ConsumerStatefulWidget {
 }
 
 class _ConsentScreenState extends ConsumerState<ConsentScreen> {
-  final _npiController = TextEditingController();
+  final _domainController = TextEditingController();
   final _purposeController = TextEditingController();
   final _durationController = TextEditingController(text: '3600');
   final _usageController = TextEditingController(text: '1');
@@ -21,7 +21,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
 
   @override
   void dispose() {
-    _npiController.dispose();
+    _domainController.dispose();
     _purposeController.dispose();
     _durationController.dispose();
     _usageController.dispose();
@@ -116,9 +116,13 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
             Text('Nouveau consentement', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
             TextField(
-              controller: _npiController,
+              controller: _domainController,
+              keyboardType: TextInputType.url,
+              textCapitalization: TextCapitalization.none,
               decoration: const InputDecoration(
-                labelText: 'DID du fournisseur',
+                labelText: 'Domaine ou IP du fournisseur',
+                hintText: 'google.com, 192.168.1.1',
+                prefixIcon: Icon(Icons.language, size: 20),
                 border: OutlineInputBorder(),
               ),
             ),
@@ -216,7 +220,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                 label: const Text('Envoyer la demande'),
                 onPressed: () async {
                   await ref.read(consentProvider.notifier).requestConsent(
-                    providerDID: _npiController.text,
+                    providerDomain: _domainController.text.trim(),
                     purpose: _purposeController.text,
                     dataClasses: _selectedDataClasses,
                     consentType: _selectedConsentType,
@@ -317,7 +321,9 @@ class _ConsentCard extends StatelessWidget {
     };
     final purpose = consent['purpose'] as String? ?? 'Partage de données';
     final dataClasses = consent['dataClasses'] as List<dynamic>? ?? [];
+    final providerDomain = consent['providerDomain'] as String? ?? '';
     final providerDID = consent['providerDID'] as String? ?? '';
+    final providerLabel = providerDomain.isNotEmpty ? providerDomain : providerDID;
     final usageCount = consent['usageCount'] as int? ?? 0;
     final maxUsage = consent['maxUsageCount'] as int? ?? 1;
     final createdAt = consent['createdAt'] as String? ?? '';
@@ -408,9 +414,25 @@ class _ConsentCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(purpose, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-            if (providerDID.isNotEmpty) ...[
+            if (providerLabel.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Text(providerDID, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey, fontSize: 11)),
+              Row(
+                children: [
+                  Icon(
+                    providerDomain.isNotEmpty ? Icons.language : Icons.badge_outlined,
+                    size: 14,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    providerLabel,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
             ],
             const SizedBox(height: 8),
             if (dataClasses.isNotEmpty) ...[

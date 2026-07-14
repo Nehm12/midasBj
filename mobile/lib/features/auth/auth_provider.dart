@@ -79,7 +79,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final available = await _localAuth.canCheckBiometrics;
       final enrolled = await _localAuth.isDeviceSupported();
-      state = state.copyWith(biometricAvailable: available && enrolled);
+      final hasToken = await _storage.readSecure('auth_token') != null;
+      state = state.copyWith(
+        biometricAvailable: available && enrolled && hasToken,
+        biometricEnabled: await _storage.readSecure('biometric_enabled') == 'true',
+      );
     } catch (_) {}
   }
 
@@ -106,6 +110,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.saveSecure('auth_token', token);
   }
 
+  Future<void> _saveSession({
+    required String token,
+    required String? did,
+    required String? npi,
+    required String? userId,
+    String? publicKey,
+    List<String> roles = const ['citizen'],
+  }) async {
+    await _saveToken(token);
+    if (did != null) await _storage.saveSecure('session_did', did);
+    if (npi != null) await _storage.saveSecure('session_npi', npi);
+    if (userId != null) await _storage.saveSecure('session_userId', userId);
+    if (publicKey != null) await _storage.saveSecure('session_publicKey', publicKey);
+    await _storage.saveSecure('session_roles', roles.join(','));
+  }
+
   Future<void> register(String npi) async {
     state = state.copyWith(status: AuthStatus.authenticating, mode: AuthMode.npi, error: null);
     try {
@@ -123,7 +143,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _storage.saveKeyPair(npi, privKeyHex, pubKeyHex);
       await _storage.saveSecure('did_$npi', did);
       await _storage.saveSecure('userId_$npi', userId);
-      if (token != null) await _saveToken(token);
+      if (token != null) {
+        await _saveSession(
+          token: token,
+          did: did,
+          npi: npi,
+          userId: userId,
+          publicKey: pubKeyHex,
+        );
+      }
 
       state = AuthState(
         status: AuthStatus.authenticated,
@@ -162,7 +190,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final token = data['token'] as String?;
       final userIdFromResponse = data['id'] as String? ?? data['sub'] as String?;
 
-      if (token != null) await _saveToken(token);
+      if (token != null) {
+        await _saveSession(
+          token: token,
+          did: did ?? data['did'] as String?,
+          npi: npi,
+          userId: userId ?? userIdFromResponse,
+          publicKey: pubKeyHex,
+        );
+      }
       if (userIdFromResponse != null) {
         await _storage.saveSecure('userId_$npi', userIdFromResponse);
       }
@@ -192,7 +228,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       await _storage.saveSecure('did_$npi', did);
       await _storage.saveSecure('userId_$npi', userId);
-      if (token != null) await _saveToken(token);
+      if (token != null) {
+        await _saveSession(
+          token: token,
+          did: did,
+          npi: npi,
+          userId: userId,
+        );
+      }
 
       state = AuthState(
         status: AuthStatus.authenticated,
@@ -216,14 +259,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final res = await _api.post('/auth/keycloak', {'token': accessToken});
       final data = res.data as Map<String, dynamic>;
+      final token = data['token'] as String?;
+      final did = data['did'] as String?;
+      final userId = data['id'] as String?;
+      final roles = (data['roles'] as List?)?.cast<String>() ?? ['citizen'];
+
+      if (token != null) {
+        await _saveSession(
+          token: token,
+          did: did,
+          npi: data['npi'] as String? ?? npi,
+          userId: userId,
+          roles: roles,
+        );
+      }
 
       state = AuthState(
         status: AuthStatus.authenticated,
         mode: AuthMode.keycloak,
-        did: data['did'] as String?,
+        did: did,
         npi: data['npi'] as String? ?? npi,
-        userId: data['id'] as String?,
-        roles: (data['roles'] as List?)?.cast<String>() ?? ['citizen'],
+        userId: userId,
+        roles: roles,
       );
     } catch (e) {
       state = state.copyWith(status: AuthStatus.unauthenticated, error: e.toString());
@@ -240,9 +297,61 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<bool> loginWithBiometric() async {
+    if (!state.biometricAvailable) return false;
+    state = state.copyWith(status: AuthStatus.authenticating, mode: AuthMode.biometric, error: null);
+    try {
+      final token = await _storage.readSecure('auth_token');
+      if (token == null) {
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          error: 'Aucune session enregistrée. Connectez-vous d\'abord.',
+        );
+        return false;
+      }
+
+      final authenticated = await _localAuth.authenticate(
+        localizedReason: 'Déverrouiller MIDAS',
+        options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
+      );
+      if (!authenticated) {
+        state = state.copyWith(status: AuthStatus.unauthenticated);
+        return false;
+      }
+
+      final did = await _storage.readSecure('session_did');
+      final npi = await _storage.readSecure('session_npi');
+      final userId = await _storage.readSecure('session_userId');
+      final pubKey = await _storage.readSecure('session_publicKey');
+      final rolesStr = await _storage.readSecure('session_roles');
+      final roles = rolesStr?.split(',') ?? ['citizen'];
+
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        mode: AuthMode.biometric,
+        did: did,
+        npi: npi,
+        userId: userId,
+        publicKey: pubKey,
+        roles: roles,
+        biometricAvailable: true,
+        biometricEnabled: true,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(status: AuthStatus.unauthenticated, error: e.toString());
+      return false;
+    }
+  }
+
   void logout() {
     _storage.deleteSecure('auth_token');
     _storage.deleteSecure('keycloak_token');
+    _storage.deleteSecure('session_did');
+    _storage.deleteSecure('session_npi');
+    _storage.deleteSecure('session_userId');
+    _storage.deleteSecure('session_publicKey');
+    _storage.deleteSecure('session_roles');
     state = const AuthState();
   }
 }

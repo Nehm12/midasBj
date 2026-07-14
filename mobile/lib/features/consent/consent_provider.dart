@@ -76,7 +76,7 @@ class ConsentNotifier extends StateNotifier<ConsentState> {
   }
 
   Future<void> requestConsent({
-    required String providerDID,
+    required String providerDomain,
     required String purpose,
     required List<String> dataClasses,
     required String consentType,
@@ -85,7 +85,7 @@ class ConsentNotifier extends StateNotifier<ConsentState> {
   }) async {
     try {
       await _api.post('/consent/request', {
-        'providerDID': providerDID,
+        'providerDomain': providerDomain,
         'purpose': purpose,
         'dataClasses': dataClasses,
         'consentType': consentType,

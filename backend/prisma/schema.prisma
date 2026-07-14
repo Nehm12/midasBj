@@ -59,21 +59,22 @@ model VerifiableCredential {
 }
 
 model Consent {
-  id           String         @id @default(uuid()) @db.Uuid
-  citizenId    String         @db.Uuid
-  providerDID  String
-  purpose      String
-  dataClasses  String[]
-  consentType  ConsentType    @default(TEMPORARY)
-  duration     Int            @default(3600)
-  signature    String         @default("")
-  previousHash String         @default("genesis")
-  status       ConsentStatus  @default(REQUESTED)
-  usageCount   Int            @default(0)
-  maxUsageCount Int           @default(1)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  expiresAt    DateTime?
+  id             String         @id @default(uuid()) @db.Uuid
+  citizenId      String         @db.Uuid
+  providerDID    String         @default("")
+  providerDomain String?
+  purpose        String
+  dataClasses    String[]
+  consentType    ConsentType    @default(TEMPORARY)
+  duration       Int            @default(3600)
+  signature      String         @default("")
+  previousHash   String         @default("genesis")
+  status         ConsentStatus  @default(REQUESTED)
+  usageCount     Int            @default(0)
+  maxUsageCount  Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  expiresAt      DateTime?
 
   citizen      User             @relation("CitizenConsents", fields: [citizenId], references: [id])
   workflow     WorkflowInstance?

@@ -13,7 +13,7 @@ const _kMqttHost = String.fromEnvironment(
 
 const _kMqttPort = int.fromEnvironment(
   'MQTT_PORT',
-  defaultValue: 1883,
+  defaultValue: 8084,
 );
 
 final mqttServiceProvider = Provider<MqttService>((ref) => MqttService());
@@ -29,7 +29,12 @@ class MqttService {
     try {
       await _doConnect(primaryHost, deviceId);
     } catch (_) {
-      await _doConnect(fallbackMqttHost, deviceId);
+      try {
+        await _doConnect(fallbackMqttHost, deviceId);
+      } catch (_) {
+        // MQTT indisponible — les alertes ne seront pas temps réel
+        // L'app fonctionne quand même via HTTP polling
+      }
     }
   }
 
@@ -37,6 +42,7 @@ class MqttService {
     _client = MqttServerClient(host, 'flutter_$deviceId');
     _client!.port = _kMqttPort;
     _client!.secure = false;
+    _client!.useWebSocket = true;
     _client!.logging(on: false);
 
     final connMessage = MqttConnectMessage()

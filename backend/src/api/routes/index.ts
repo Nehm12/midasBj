@@ -11,6 +11,7 @@ import { consentRoutes } from '../../modules/consent/consent.routes.js';
 import { iotRoutes } from '../../modules/iot/iot.routes.js';
 import { auditRoutes } from '../../modules/audit/audit.routes.js';
 import { processingRegisterRoutes } from '../../modules/processing-register/processing-register.routes.js';
+import { adminRoutes } from '../../modules/admin/admin.routes.js';
 
 export async function apiRoutes(app: FastifyInstance) {
   await app.register(authRoutes);
@@ -19,6 +20,7 @@ export async function apiRoutes(app: FastifyInstance) {
   await app.register(iotRoutes);
   await app.register(auditRoutes);
   await app.register(processingRegisterRoutes);
+  await app.register(adminRoutes);
 
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 }

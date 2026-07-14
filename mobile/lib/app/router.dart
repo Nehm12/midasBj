@@ -7,6 +7,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/auth_screen.dart';
+import '../features/auth/keycloak_login_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../features/consent/consent_screen.dart';
 import '../features/iot/iot_screen.dart';
@@ -19,6 +20,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/auth',
     routes: [
       GoRoute(path: '/auth', builder: (_, __) => const AuthScreen()),
+      GoRoute(path: '/auth/keycloak', builder: (_, __) => const KeycloakLoginScreen()),
       ShellRoute(
         builder: (_, __, child) => AppShell(child: child),
         routes: [
