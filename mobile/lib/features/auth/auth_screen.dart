@@ -146,26 +146,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      '— ou —',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _showNpiDialog(context, ref, 'simple'),
-                        icon: const Icon(Icons.keyboard_rounded, size: 20),
-                        label: const Text(
-                          'Connexion simple (NPI seul)',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 14),
                     SizedBox(
                       width: double.infinity,
@@ -314,8 +294,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       case 'login':
         notifier.login(npi);
         break;
-      case 'simple':
-        notifier.loginSimple(npi);
+      default:
         break;
     }
     Future.delayed(const Duration(seconds: 2), () {

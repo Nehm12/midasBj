@@ -177,6 +177,29 @@ class IoTNotifier extends StateNotifier<IoTState> {
       await loadDevices();
     } catch (_) {}
   }
+
+  Future<String?> registerExternalDevice({
+    required String deviceId,
+    String? name,
+  }) async {
+    try {
+      final res = await _api.post('/iot/register', {
+        'deviceId': deviceId,
+        'name': name ?? deviceId,
+        'publicKey': 'external-device-no-crypto',
+        'attestation': {
+          'secureBoot': false,
+          'flashEncryption': false,
+          'tpm': false,
+          'type': 'EXTERNAL',
+        },
+      });
+      await loadDevices();
+      return (res.data as Map<String, dynamic>)['id']?.toString();
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 final iotProvider = StateNotifierProvider<IoTNotifier, IoTState>((ref) {

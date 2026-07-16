@@ -17,17 +17,17 @@ import { keycloakService } from '../../infrastructure/auth/keycloak.js';
 
 export const authService = {
 
-  async register({ npi, publicKey }: { npi: string; publicKey: string }) {
+  async register({ npi, publicKey, firstName, lastName }: { npi: string; publicKey: string; firstName?: string; lastName?: string }) {
     const did = `did:midas:benin:${npi}`;
     const user = await prisma.user.create({
-      data: { npi, did, publicKey },
+      data: { npi, did, publicKey, firstName: firstName ?? null, lastName: lastName ?? null },
     });
     const token = jwt.sign(
       { sub: user.id, did: user.did, npi: user.npi, roles: ['citizen'] },
       config.JWT_SECRET,
       { expiresIn: '24h' },
     );
-    return { did, id: user.id, token };
+    return { did, id: user.id, token, firstName: user.firstName, lastName: user.lastName };
   },
 
   async login({ npi, signature }: { npi: string; signature: string }) {
@@ -48,7 +48,7 @@ export const authService = {
       config.JWT_SECRET,
       { expiresIn: '24h' },
     );
-    return { token, did: user.did, id: user.id };
+    return { token, did: user.did, id: user.id, firstName: user.firstName, lastName: user.lastName };
   },
 
   async loginSimple(npi: string) {
@@ -63,7 +63,7 @@ export const authService = {
       config.JWT_SECRET,
       { expiresIn: '24h' },
     );
-    return { token, did: user.did, id: user.id };
+    return { token, did: user.did, id: user.id, firstName: user.firstName, lastName: user.lastName };
   },
 
   async loginWithKeycloak(keycloakToken: string) {
@@ -80,7 +80,7 @@ export const authService = {
       (err as any).statusCode = 401;
       throw err;
     }
-    return { id: user.id, did: user.did, npi: user.npi, roles: payload.roles ?? ['citizen'] };
+    return { id: user.id, did: user.did, npi: user.npi, roles: payload.roles ?? ['citizen'], firstName: user.firstName, lastName: user.lastName };
   },
 
   async rotateKey({ userId, newPublicKey }: { userId: string; newPublicKey: string }) {
@@ -104,5 +104,19 @@ export const authService = {
 
   async getUserRoles(userId: string): Promise<string[]> {
     return keycloakService.getUserRoles(userId);
+  },
+
+  async updateProfile({ userId, firstName, lastName }: { userId: string; firstName?: string; lastName?: string }) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      const err = new Error('Utilisateur introuvable.');
+      (err as any).statusCode = 404;
+      throw err;
+    }
+    await prisma.user.update({
+      where: { id: userId },
+      data: { firstName: firstName ?? user.firstName, lastName: lastName ?? user.lastName },
+    });
+    return { id: user.id, npi: user.npi, did: user.did, firstName: firstName ?? user.firstName, lastName: lastName ?? user.lastName };
   },
 };

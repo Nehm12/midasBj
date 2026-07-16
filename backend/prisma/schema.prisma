@@ -35,6 +35,8 @@ model User {
   id        String   @id @default(uuid()) @db.Uuid
   npi       String   @unique
   did       String   @unique
+  firstName String?
+  lastName  String?
   publicKey String
   keycloakId String?
   createdAt DateTime @default(now())

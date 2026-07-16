@@ -1,7 +1,7 @@
 /// Écran Profil / Paramètres.
 ///
 /// Affiche toutes les informations de l'utilisateur connecté :
-/// - NPI, DID, ID utilisateur
+/// - Prénom, Nom, NPI, DID, ID utilisateur
 /// - Mode d'authentification
 /// - Rôles
 /// - Mode de chiffrement du wallet
@@ -13,11 +13,35 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../wallet/wallet_provider.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final authState = ref.read(authProvider);
+    _firstNameController = TextEditingController(text: authState.firstName ?? '');
+    _lastNameController = TextEditingController(text: authState.lastName ?? '');
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final walletState = ref.watch(walletProvider);
     final theme = Theme.of(context);
@@ -62,7 +86,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  authState.npi ?? 'NPI inconnu',
+                  _getDisplayName(authState),
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1A1A1A),
@@ -83,7 +107,65 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Section informations
+          // Section informations personnelles
+          _sectionHeader(theme, 'Informations personnelles'),
+          const SizedBox(height: 12),
+          _editableTile(
+            'Prénom',
+            TextEditingController(text: authState.firstName ?? '—'),
+            Icons.person_outline,
+            isEditing: _isEditing,
+            editController: _firstNameController,
+          ),
+          _editableTile(
+            'Nom',
+            TextEditingController(text: authState.lastName ?? '—'),
+            Icons.person_outline,
+            isEditing: _isEditing,
+            editController: _lastNameController,
+          ),
+          if (_isEditing) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: FilledButton.icon(
+                onPressed: () async {
+                  await ref.read(authProvider.notifier).updateProfile(
+                    firstName: _firstNameController.text.isNotEmpty ? _firstNameController.text : null,
+                    lastName: _lastNameController.text.isNotEmpty ? _lastNameController.text : null,
+                  );
+                  setState(() => _isEditing = false);
+                },
+                icon: const Icon(Icons.save_rounded, size: 18),
+                label: const Text('Enregistrer', style: TextStyle(fontSize: 14)),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B1A1A),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isEditing = true;
+                    _firstNameController.text = authState.firstName ?? '';
+                    _lastNameController.text = authState.lastName ?? '';
+                  });
+                },
+                icon: const Icon(Icons.edit_rounded, size: 18),
+                label: const Text('Modifier le profil', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+
+          // Section compte
           _sectionHeader(theme, 'Informations du compte'),
           const SizedBox(height: 12),
           _infoTile('NPI', authState.npi ?? '—', Icons.badge_outlined),
@@ -150,6 +232,12 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  String _getDisplayName(AuthState authState) {
+    final parts = [authState.firstName, authState.lastName].where((s) => s != null && s.isNotEmpty);
+    if (parts.isNotEmpty) return parts.join(' ');
+    return authState.npi ?? 'NPI inconnu';
+  }
+
   Widget _sectionHeader(ThemeData theme, String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 4),
@@ -204,5 +292,25 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Widget _editableTile(String label, TextEditingController controller, IconData icon, {required bool isEditing, TextEditingController? editController}) {
+    if (isEditing && editController != null) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: TextField(
+          controller: editController,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: Icon(icon, size: 20, color: const Color(0xFF8B1A1A)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ),
+        ),
+      );
+    }
+    return _infoTile(label, controller.text, icon);
   }
 }

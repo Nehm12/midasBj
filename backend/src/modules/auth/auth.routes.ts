@@ -9,6 +9,7 @@
  * GET  /auth/session       → Validation du token JWT
  * POST /auth/rotate-key    → Rotation de clé publique (JWT requis)
  * GET  /auth/roles         → Rôles de l'utilisateur (JWT requis)
+ * PUT  /auth/profile       → Mise à jour du profil (JWT requis)
  */
 import { FastifyInstance } from 'fastify';
 import { authService } from './auth.service.js';
@@ -23,8 +24,8 @@ export async function authRoutes(app: FastifyInstance) {
   }));
 
   app.post('/auth/register', async (request, reply) => {
-    const { npi, publicKey } = request.body as { npi: string; publicKey: string };
-    const result = await authService.register({ npi, publicKey });
+    const { npi, publicKey, firstName, lastName } = request.body as { npi: string; publicKey: string; firstName?: string; lastName?: string };
+    const result = await authService.register({ npi, publicKey, firstName, lastName });
     return reply.code(201).send(result);
   });
 
@@ -64,5 +65,12 @@ export async function authRoutes(app: FastifyInstance) {
     const userId = request.user!.sub;
     const roles = await authService.getUserRoles(userId);
     return reply.send({ roles });
+  });
+
+  app.put('/auth/profile', { preHandler: authMiddleware }, async (request, reply) => {
+    const userId = request.user!.sub;
+    const { firstName, lastName } = request.body as { firstName?: string; lastName?: string };
+    const result = await authService.updateProfile({ userId, firstName, lastName });
+    return reply.send(result);
   });
 }

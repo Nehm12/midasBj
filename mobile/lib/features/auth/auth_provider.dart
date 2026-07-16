@@ -18,6 +18,8 @@ class AuthState {
   final String? npi;
   final String? userId;
   final String? publicKey;
+  final String? firstName;
+  final String? lastName;
   final List<String> roles;
   final bool biometricEnabled;
   final bool biometricAvailable;
@@ -30,6 +32,8 @@ class AuthState {
     this.npi,
     this.userId,
     this.publicKey,
+    this.firstName,
+    this.lastName,
     this.roles = const [],
     this.biometricEnabled = false,
     this.biometricAvailable = false,
@@ -43,6 +47,8 @@ class AuthState {
     String? npi,
     String? userId,
     String? publicKey,
+    String? firstName,
+    String? lastName,
     List<String>? roles,
     bool? biometricEnabled,
     bool? biometricAvailable,
@@ -55,6 +61,8 @@ class AuthState {
       npi: npi ?? this.npi,
       userId: userId ?? this.userId,
       publicKey: publicKey ?? this.publicKey,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       roles: roles ?? this.roles,
       biometricEnabled: biometricEnabled ?? this.biometricEnabled,
       biometricAvailable: biometricAvailable ?? this.biometricAvailable,
@@ -116,6 +124,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String? npi,
     required String? userId,
     String? publicKey,
+    String? firstName,
+    String? lastName,
     List<String> roles = const ['citizen'],
   }) async {
     await _saveToken(token);
@@ -123,6 +133,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (npi != null) await _storage.saveSecure('session_npi', npi);
     if (userId != null) await _storage.saveSecure('session_userId', userId);
     if (publicKey != null) await _storage.saveSecure('session_publicKey', publicKey);
+    if (firstName != null) await _storage.saveSecure('session_firstName', firstName);
+    if (lastName != null) await _storage.saveSecure('session_lastName', lastName);
     await _storage.saveSecure('session_roles', roles.join(','));
   }
 
@@ -139,6 +151,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final did = res.data['did'] as String;
       final userId = res.data['id'] as String;
       final token = res.data['token'] as String?;
+      final firstName = res.data['firstName'] as String?;
+      final lastName = res.data['lastName'] as String?;
 
       await _storage.saveKeyPair(npi, privKeyHex, pubKeyHex);
       await _storage.saveSecure('did_$npi', did);
@@ -150,6 +164,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           npi: npi,
           userId: userId,
           publicKey: pubKeyHex,
+          firstName: firstName,
+          lastName: lastName,
         );
       }
 
@@ -160,6 +176,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         npi: npi,
         userId: userId,
         publicKey: pubKeyHex,
+        firstName: firstName,
+        lastName: lastName,
         roles: ['citizen'],
       );
     } catch (e) {
@@ -189,6 +207,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final data = res.data as Map<String, dynamic>;
       final token = data['token'] as String?;
       final userIdFromResponse = data['id'] as String? ?? data['sub'] as String?;
+      final firstName = data['firstName'] as String?;
+      final lastName = data['lastName'] as String?;
 
       if (token != null) {
         await _saveSession(
@@ -197,6 +217,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           npi: npi,
           userId: userId ?? userIdFromResponse,
           publicKey: pubKeyHex,
+          firstName: firstName,
+          lastName: lastName,
         );
       }
       if (userIdFromResponse != null) {
@@ -210,6 +232,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         npi: npi,
         userId: userId ?? userIdFromResponse,
         publicKey: pubKeyHex,
+        firstName: firstName,
+        lastName: lastName,
         roles: ['citizen'],
       );
     } catch (e) {
@@ -225,6 +249,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final did = data['did'] as String;
       final userId = data['id'] as String? ?? data['sub'] as String? ?? '';
       final token = data['token'] as String?;
+      final firstName = data['firstName'] as String?;
+      final lastName = data['lastName'] as String?;
 
       await _storage.saveSecure('did_$npi', did);
       await _storage.saveSecure('userId_$npi', userId);
@@ -234,6 +260,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           did: did,
           npi: npi,
           userId: userId,
+          firstName: firstName,
+          lastName: lastName,
         );
       }
 
@@ -243,6 +271,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         did: did,
         npi: npi,
         userId: userId,
+        firstName: firstName,
+        lastName: lastName,
         roles: ['citizen'],
       );
     } catch (e) {
@@ -263,6 +293,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final did = data['did'] as String?;
       final userId = data['id'] as String?;
       final roles = (data['roles'] as List?)?.cast<String>() ?? ['citizen'];
+      final firstName = data['firstName'] as String?;
+      final lastName = data['lastName'] as String?;
 
       if (token != null) {
         await _saveSession(
@@ -271,6 +303,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           npi: data['npi'] as String? ?? npi,
           userId: userId,
           roles: roles,
+          firstName: firstName,
+          lastName: lastName,
         );
       }
 
@@ -280,6 +314,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         did: did,
         npi: data['npi'] as String? ?? npi,
         userId: userId,
+        firstName: firstName,
+        lastName: lastName,
         roles: roles,
       );
     } catch (e) {
@@ -325,6 +361,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final pubKey = await _storage.readSecure('session_publicKey');
       final rolesStr = await _storage.readSecure('session_roles');
       final roles = rolesStr?.split(',') ?? ['citizen'];
+      final firstName = await _storage.readSecure('session_firstName');
+      final lastName = await _storage.readSecure('session_lastName');
 
       state = AuthState(
         status: AuthStatus.authenticated,
@@ -333,6 +371,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         npi: npi,
         userId: userId,
         publicKey: pubKey,
+        firstName: firstName,
+        lastName: lastName,
         roles: roles,
         biometricAvailable: true,
         biometricEnabled: true,
@@ -351,8 +391,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _storage.deleteSecure('session_npi');
     _storage.deleteSecure('session_userId');
     _storage.deleteSecure('session_publicKey');
+    _storage.deleteSecure('session_firstName');
+    _storage.deleteSecure('session_lastName');
     _storage.deleteSecure('session_roles');
     state = const AuthState();
+  }
+
+  Future<void> updateProfile({String? firstName, String? lastName}) async {
+    try {
+      final res = await _api.put('/auth/profile', {
+        if (firstName != null) 'firstName': firstName,
+        if (lastName != null) 'lastName': lastName,
+      });
+      final data = res.data as Map<String, dynamic>;
+      final newFirstName = data['firstName'] as String?;
+      final newLastName = data['lastName'] as String?;
+
+      if (newFirstName != null) await _storage.saveSecure('session_firstName', newFirstName);
+      if (newLastName != null) await _storage.saveSecure('session_lastName', newLastName);
+
+      state = state.copyWith(firstName: newFirstName, lastName: newLastName);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
   }
 }
 
