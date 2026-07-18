@@ -159,28 +159,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                         ),
                       ),
                     ),
-                    if (authState.biometricAvailable) ...[
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _biometricLogin(context, ref),
-                          icon: Icon(
-                            authState.biometricEnabled
-                                ? Icons.fingerprint
-                                : Icons.fingerprint_outlined,
-                            size: 20,
-                          ),
-                          label: Text(
-                            authState.biometricEnabled
-                                ? 'Deverrouillage biometrique'
-                                : 'Activer biométrie',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                          ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _biometricLogin(context, ref),
+                        icon: Icon(
+                          authState.biometricEnabled
+                              ? Icons.fingerprint
+                              : Icons.fingerprint_outlined,
+                          size: 20,
+                        ),
+                        label: Text(
+                          authState.biometricEnabled
+                              ? 'Deverrouillage biometrique'
+                              : 'Activer biométrie',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                         ),
                       ),
-                    ],
+                    ),
                   ],
                 ],
               ),

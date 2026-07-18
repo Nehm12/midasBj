@@ -19,6 +19,12 @@ export const authService = {
 
   async register({ npi, publicKey, firstName, lastName }: { npi: string; publicKey: string; firstName?: string; lastName?: string }) {
     const did = `did:midas:benin:${npi}`;
+    const existing = await prisma.user.findUnique({ where: { npi } });
+    if (existing) {
+      const err = new Error('Ce NPI est déjà enregistré. Connectez-vous plutôt.');
+      (err as any).statusCode = 409;
+      throw err;
+    }
     const user = await prisma.user.create({
       data: { npi, did, publicKey, firstName: firstName ?? null, lastName: lastName ?? null },
     });

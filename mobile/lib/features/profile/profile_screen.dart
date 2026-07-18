@@ -178,10 +178,63 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             walletState.isEncrypted ? 'Oui' : 'Non',
             walletState.isEncrypted ? Icons.lock_rounded : Icons.lock_open_rounded,
           ),
-          _infoTile(
-            'Biométrie',
-            authState.biometricEnabled ? 'Active' : 'Inactive',
-            Icons.fingerprint,
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE8E8E8)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.fingerprint, size: 20, color: Color(0xFF8B1A1A)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Biométrie',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        authState.biometricEnabled ? 'Active' : 'Inactive',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: authState.biometricEnabled,
+                  activeColor: const Color(0xFF8B1A1A),
+                  onChanged: (_) async {
+                    try {
+                      await ref.read(authProvider.notifier).toggleBiometric();
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(e.toString()),
+                            backgroundColor: Theme.of(context).colorScheme.error,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 32),
           // Section actions

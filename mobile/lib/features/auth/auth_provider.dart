@@ -1,5 +1,6 @@
 /// Gestion d'état de l'authentification.
 library;
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:local_auth/local_auth.dart';
@@ -180,6 +181,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
         lastName: lastName,
         roles: ['citizen'],
       );
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response!.data as Map)['error']?.toString()
+          : null;
+      if (e.response?.statusCode == 409) {
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          error: msg ?? 'Ce NPI est déjà enregistré. Connectez-vous plutôt.',
+        );
+      } else {
+        state = state.copyWith(status: AuthStatus.unauthenticated, error: msg ?? e.message);
+      }
     } catch (e) {
       state = state.copyWith(status: AuthStatus.unauthenticated, error: e.toString());
     }
@@ -334,7 +347,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<bool> loginWithBiometric() async {
-    if (!state.biometricAvailable) return false;
     state = state.copyWith(status: AuthStatus.authenticating, mode: AuthMode.biometric, error: null);
     try {
       final token = await _storage.readSecure('auth_token');
