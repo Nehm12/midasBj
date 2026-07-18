@@ -37,6 +37,13 @@ function adminMiddleware(request: FastifyRequest, reply: FastifyReply) {
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export async function adminRoutes(app: FastifyInstance) {
 
   // ── Connexion admin ──
@@ -70,30 +77,37 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get('/admin/dashboard', { preHandler: adminMiddleware }, async (_request, reply) => {
     try {
       const [auditSearch, violations, entityTypes, logStats, users, consents, iotDevices] = await Promise.all([
-        prisma.auditEvent.count().catch(() => 0),
-        prisma.auditEvent.findMany({
-          where: {
-            OR: [
-              { action: { contains: 'DENIED' } },
-              { action: { contains: 'FAILED' } },
-              { action: { contains: 'BREACH' } },
-              { action: { contains: 'UNAUTHORIZED' } },
-            ],
-          },
-          select: { id: true },
-        }).then(r => r.length).catch(() => 0),
-        prisma.auditEvent.groupBy({ by: ['entityType'], _count: { id: true } }).catch(() => []),
+        withTimeout(prisma.auditEvent.count(), 5000, 0),
+        withTimeout(
+          prisma.auditEvent.findMany({
+            where: {
+              OR: [
+                { action: { contains: 'DENIED' } },
+                { action: { contains: 'FAILED' } },
+                { action: { contains: 'BREACH' } },
+                { action: { contains: 'UNAUTHORIZED' } },
+              ],
+            },
+            select: { id: true },
+            take: 500,
+          }).then(r => r.length),
+          5000, 0,
+        ),
+        withTimeout(prisma.auditEvent.groupBy({ by: ['entityType'], _count: { id: true } }), 5000, []),
         logCollector.getStats(),
-        prisma.user.count().catch(() => 0),
-        prisma.consent.count().catch(() => 0),
-        prisma.ioTDevice.count().catch(() => 0),
+        withTimeout(prisma.user.count(), 5000, 0),
+        withTimeout(prisma.consent.count(), 5000, 0),
+        withTimeout(prisma.ioTDevice.count(), 5000, 0),
       ]);
 
-      const recentEvents = await prisma.auditEvent.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        include: { user: { select: { npi: true, did: true } } },
-      }).catch(() => []);
+      const recentEvents = await withTimeout(
+        prisma.auditEvent.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          include: { user: { select: { npi: true, did: true } } },
+        }),
+        5000, [],
+      );
 
       return reply.send({
         stats: {

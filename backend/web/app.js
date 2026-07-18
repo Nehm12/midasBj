@@ -17,13 +17,19 @@ async function api(path, options = {}) {
   const url = `${API}${path}`;
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (ADMIN_TOKEN) headers['Authorization'] = `Bearer ${ADMIN_TOKEN}`;
-  const res = await fetch(url, { ...options, headers });
-  if (res.status === 401) { handleLogout(); throw new Error('Session expirée'); }
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`${res.status}: ${text}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(url, { ...options, headers, signal: controller.signal });
+    if (res.status === 401) { handleLogout(); throw new Error('Session expirée'); }
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`${res.status}: ${text}`);
+    }
+    return res.json();
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json();
 }
 
 // ── Auth ──
