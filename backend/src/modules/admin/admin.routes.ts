@@ -75,8 +75,22 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // ── Dashboard agrégé ──
   app.get('/admin/dashboard', { preHandler: adminMiddleware }, async (_request, reply) => {
+    const fallback = {
+      stats: {
+        totalAuditEvents: 0,
+        totalViolations: 0,
+        totalUsers: 0,
+        totalConsents: 0,
+        totalIotDevices: 0,
+        entityTypes: [] as { type: string; count: number }[],
+        chainStatus: 'integre' as string,
+      },
+      logs: logCollector.getStats(),
+      recentEvents: [] as any[],
+    };
+
     try {
-      const [auditSearch, violations, entityTypes, logStats, users, consents, iotDevices] = await Promise.all([
+      const [auditSearch, violations, entityTypes, users, consents, iotDevices] = await Promise.all([
         withTimeout(prisma.auditEvent.count(), 5000, 0),
         withTimeout(
           prisma.auditEvent.findMany({
@@ -94,20 +108,22 @@ export async function adminRoutes(app: FastifyInstance) {
           5000, 0,
         ),
         withTimeout(prisma.auditEvent.groupBy({ by: ['entityType'], _count: { id: true } }), 5000, []),
-        logCollector.getStats(),
         withTimeout(prisma.user.count(), 5000, 0),
         withTimeout(prisma.consent.count(), 5000, 0),
         withTimeout(prisma.ioTDevice.count(), 5000, 0),
       ]);
 
-      const recentEvents = await withTimeout(
-        prisma.auditEvent.findMany({
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-          include: { user: { select: { npi: true, did: true } } },
-        }),
-        5000, [],
-      );
+      let recentEvents: any[] = [];
+      try {
+        recentEvents = await withTimeout(
+          prisma.auditEvent.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            include: { user: { select: { npi: true, did: true } } },
+          }),
+          5000, [],
+        );
+      } catch (_) {}
 
       return reply.send({
         stats: {
@@ -119,12 +135,12 @@ export async function adminRoutes(app: FastifyInstance) {
           entityTypes: entityTypes.map((t: any) => ({ type: t.entityType, count: t._count.id })),
           chainStatus: violations > 0 ? 'alteree' : 'integre',
         },
-        logs: logStats,
+        logs: logCollector.getStats(),
         recentEvents,
       });
     } catch (err: any) {
       logCollector.error('admin', 'Erreur chargement dashboard', { error: err.message });
-      return reply.code(500).send({ error: 'Erreur chargement dashboard' });
+      return reply.send(fallback);
     }
   });
 
