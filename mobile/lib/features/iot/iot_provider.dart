@@ -12,6 +12,7 @@ class IoTState {
   final List<Map<String, dynamic>> alerts;
   final bool isLoading;
   final int unreadAlerts;
+  final String? error;
 
   const IoTState({
     this.devices = const [],
@@ -20,7 +21,30 @@ class IoTState {
     this.alerts = const [],
     this.isLoading = false,
     this.unreadAlerts = 0,
+    this.error,
   });
+
+  IoTState copyWith({
+    List<Map<String, dynamic>>? devices,
+    Map<String, dynamic>? selectedDevice,
+    bool clearSelectedDevice = false,
+    List<Map<String, dynamic>>? telemetry,
+    List<Map<String, dynamic>>? alerts,
+    bool? isLoading,
+    int? unreadAlerts,
+    String? error,
+    bool clearError = false,
+  }) {
+    return IoTState(
+      devices: devices ?? this.devices,
+      selectedDevice: clearSelectedDevice ? null : (selectedDevice ?? this.selectedDevice),
+      telemetry: telemetry ?? this.telemetry,
+      alerts: alerts ?? this.alerts,
+      isLoading: isLoading ?? this.isLoading,
+      unreadAlerts: unreadAlerts ?? this.unreadAlerts,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
 }
 
 class IoTNotifier extends StateNotifier<IoTState> {
@@ -37,10 +61,7 @@ class IoTNotifier extends StateNotifier<IoTState> {
       if (data['type'] == 'ALERT') {
         final newAlert = data['data'] as Map<String, dynamic>?;
         if (newAlert != null) {
-          state = IoTState(
-            devices: state.devices,
-            selectedDevice: state.selectedDevice,
-            telemetry: state.telemetry,
+          state = state.copyWith(
             alerts: [newAlert, ...state.alerts],
             unreadAlerts: state.unreadAlerts + 1,
           );
@@ -56,24 +77,23 @@ class IoTNotifier extends StateNotifier<IoTState> {
   }
 
   Future<void> loadDevices() async {
-    state = IoTState(isLoading: true);
+    state = state.copyWith(isLoading: true, clearError: true, clearSelectedDevice: true);
     try {
       final res = await _api.get('/iot/devices');
       final list = (res.data as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
-      state = IoTState(devices: list);
-    } catch (_) {
-      state = const IoTState();
+      state = state.copyWith(devices: list, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: 'Erreur de chargement: $e');
     }
   }
 
   Future<void> loadDeviceDetail(String id) async {
     try {
       final res = await _api.get('/iot/devices/$id');
-      state = IoTState(
-        devices: state.devices,
-        selectedDevice: res.data as Map<String, dynamic>,
-      );
-    } catch (_) {}
+      state = state.copyWith(selectedDevice: res.data as Map<String, dynamic>);
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur: $e');
+    }
   }
 
   Future<void> loadTelemetry(String deviceId, {String? metric}) async {
@@ -82,12 +102,10 @@ class IoTNotifier extends StateNotifier<IoTState> {
       if (metric != null) params['metric'] = metric;
       final res = await _api.get('/iot/devices/$deviceId/telemetry', params: params);
       final list = (res.data as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
-      state = IoTState(
-        devices: state.devices,
-        selectedDevice: state.selectedDevice,
-        telemetry: list,
-      );
-    } catch (_) {}
+      state = state.copyWith(telemetry: list);
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur télémétrie: $e');
+    }
   }
 
   Future<void> loadAlerts({String? deviceId, bool unreadOnly = false}) async {
@@ -96,21 +114,22 @@ class IoTNotifier extends StateNotifier<IoTState> {
       final params = unreadOnly ? <String, dynamic>{'unread': 'true'} : null;
       final res = await _api.get(path, params: params);
       final list = (res.data as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
-      state = IoTState(
-        devices: state.devices,
-        selectedDevice: state.selectedDevice,
-        telemetry: state.telemetry,
+      state = state.copyWith(
         alerts: list,
         unreadAlerts: list.where((a) => a['read'] == false).length,
       );
-    } catch (_) {}
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur alertes: $e');
+    }
   }
 
   Future<void> markAlertRead(String alertId) async {
     try {
       await _api.post('/iot/alerts/$alertId/read', {});
       await loadAlerts();
-    } catch (_) {}
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur: $e');
+    }
   }
 
   Future<void> setThreshold({
@@ -129,7 +148,9 @@ class IoTNotifier extends StateNotifier<IoTState> {
         'enabled': enabled,
       });
       await loadDeviceDetail(deviceId);
-    } catch (_) {}
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur seuil: $e');
+    }
   }
 
   Future<void> pairDevice(String deviceId, String signature, String challenge) async {
@@ -140,7 +161,9 @@ class IoTNotifier extends StateNotifier<IoTState> {
         'challenge': challenge,
       });
       await loadDevices();
-    } catch (_) {}
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur jumelage: $e');
+    }
   }
 
   Future<void> pairDeviceByQr(String deviceId, String signature, String challenge) async {
@@ -151,7 +174,9 @@ class IoTNotifier extends StateNotifier<IoTState> {
         'challenge': challenge,
       });
       await loadDevices();
-    } catch (_) {}
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur jumelage QR: $e');
+    }
   }
 
   Future<String?> getPairingChallenge(String deviceId) async {
@@ -159,7 +184,8 @@ class IoTNotifier extends StateNotifier<IoTState> {
       final res = await _api.get('/iot/pair-challenge/$deviceId');
       final data = res.data as Map<String, dynamic>;
       return jsonEncode(data);
-    } catch (_) {
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur défi: $e');
       return null;
     }
   }
@@ -168,17 +194,21 @@ class IoTNotifier extends StateNotifier<IoTState> {
     try {
       await _api.put('/iot/devices/$deviceId/name', {'name': name});
       await loadDevices();
-    } catch (_) {}
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur renommage: $e');
+    }
   }
 
   Future<void> unregisterDevice(String deviceId) async {
     try {
       await _api.post('/iot/unregister', {'deviceId': deviceId});
       await loadDevices();
-    } catch (_) {}
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur désenregistrement: $e');
+    }
   }
 
-  Future<String?> registerExternalDevice({
+  Future<void> registerExternalDevice({
     required String deviceId,
     String? name,
   }) async {
@@ -196,7 +226,8 @@ class IoTNotifier extends StateNotifier<IoTState> {
       });
       await loadDevices();
       return (res.data as Map<String, dynamic>)['id']?.toString();
-    } catch (_) {
+    } catch (e) {
+      state = state.copyWith(error: 'Erreur d\'enregistrement: $e');
       return null;
     }
   }

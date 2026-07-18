@@ -9,6 +9,16 @@ import '../../core/network/api_client.dart';
 import '../../core/storage/storage_service.dart';
 import '../../core/network/keycloak_service.dart';
 
+String _bytesToHex(List<int> bytes) {
+  final hexChars = '0123456789abcdef';
+  final sb = StringBuffer();
+  for (final b in bytes) {
+    sb.write(hexChars[(b >> 4) & 0x0f]);
+    sb.write(hexChars[b & 0x0f]);
+  }
+  return sb.toString();
+}
+
 enum AuthStatus { unauthenticated, authenticating, authenticated }
 enum AuthMode { npi, keycloak, biometric, simple }
 
@@ -144,7 +154,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final keyPair = await _crypto.generateEd25519KeyPair();
       final publicKey = await keyPair.extractPublicKey();
-      final pubKeyHex = base64Encode(publicKey.bytes);
+      final pubKeyHex = _bytesToHex(publicKey.bytes);
       final privKeyBytes = await keyPair.extractPrivateKeyBytes();
       final privKeyHex = base64Encode(privKeyBytes);
 
@@ -214,7 +224,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final keyPair = await _crypto.ed25519.newKeyPairFromSeed(privKeyBytes);
       final message = utf8.encode(npi);
       final signature = await _crypto.signEd25519(keyPair, message);
-      final sigHex = base64Encode(signature);
+      final sigHex = _bytesToHex(signature);
 
       final res = await _api.post('/auth/login', {'npi': npi, 'signature': sigHex});
       final data = res.data as Map<String, dynamic>;

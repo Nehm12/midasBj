@@ -43,9 +43,14 @@ export const authService = {
       (err as any).statusCode = 401;
       throw err;
     }
-    const isValid = ed25519Crypto.verify(user.publicKey, npi, signature);
+    let isValid = false;
+    try {
+      isValid = ed25519Crypto.verify(user.publicKey, npi, signature);
+    } catch (_) {
+      isValid = false;
+    }
     if (!isValid) {
-      const err = new Error('Signature invalide');
+      const err = new Error('Signature invalide ou clé non reconnue.');
       (err as any).statusCode = 401;
       throw err;
     }

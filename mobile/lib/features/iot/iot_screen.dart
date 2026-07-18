@@ -17,6 +17,14 @@ class _IoTDeviceScreenState extends ConsumerState<IoTDeviceScreen> {
   final _nameController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(iotProvider.notifier).loadDevices();
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
@@ -54,6 +62,18 @@ class _IoTDeviceScreenState extends ConsumerState<IoTDeviceScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(iotProvider);
     final theme = Theme.of(context);
+
+    ref.listen<IoTState>(iotProvider, (prev, next) {
+      if (next.error != null && next.error!.isNotEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
 
     if (state.selectedDevice != null) return _buildDeviceDetail(state, theme);
 

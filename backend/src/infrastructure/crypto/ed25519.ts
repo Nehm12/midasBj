@@ -36,18 +36,25 @@ export const ed25519Crypto = {
 
   /**
    * Vérifie qu'une signature correspond bien au message et à la clé publique.
+   * Gère les clés en hex ou base64 (compatibilité anciens comptes).
    */
   verify(
     publicKeyHex: string,
     message: string,
     signatureHex: string,
   ): boolean {
-    const publicKey = Buffer.from(publicKeyHex, 'hex');
-    const signature = Buffer.from(signatureHex, 'hex');
+    let publicKeyBuf = Buffer.from(publicKeyHex, 'hex');
+    if (publicKeyBuf.length !== 32) {
+      publicKeyBuf = Buffer.from(publicKeyHex, 'base64');
+    }
+    let signatureBuf = Buffer.from(signatureHex, 'hex');
+    if (signatureBuf.length !== 64) {
+      signatureBuf = Buffer.from(signatureHex, 'base64');
+    }
     return ed25519.verify(
-      signature,
+      signatureBuf,
       Buffer.from(message, 'utf-8'),
-      publicKey,
+      publicKeyBuf,
     );
   },
 };
