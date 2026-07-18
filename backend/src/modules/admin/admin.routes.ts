@@ -70,7 +70,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get('/admin/dashboard', { preHandler: adminMiddleware }, async (_request, reply) => {
     try {
       const [auditSearch, violations, entityTypes, logStats, users, consents, iotDevices] = await Promise.all([
-        prisma.auditEvent.count(),
+        prisma.auditEvent.count().catch(() => 0),
         prisma.auditEvent.findMany({
           where: {
             OR: [
@@ -80,15 +80,13 @@ export async function adminRoutes(app: FastifyInstance) {
               { action: { contains: 'UNAUTHORIZED' } },
             ],
           },
+          select: { id: true },
         }).then(r => r.length).catch(() => 0),
         prisma.auditEvent.groupBy({ by: ['entityType'], _count: { id: true } }).catch(() => []),
         logCollector.getStats(),
         prisma.user.count().catch(() => 0),
         prisma.consent.count().catch(() => 0),
-        prisma.ioTData.findMany({ select: { deviceId: true } }).then((r: { deviceId: string }[]) => {
-          const unique = new Set(r.map((d: { deviceId: string }) => d.deviceId));
-          return unique.size;
-        }).catch(() => 0),
+        prisma.ioTDevice.count().catch(() => 0),
       ]);
 
       const recentEvents = await prisma.auditEvent.findMany({

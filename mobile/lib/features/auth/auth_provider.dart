@@ -109,14 +109,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> authenticateBiometric({
     String reason = 'Déverrouiller MIDAS',
   }) async {
-    if (!state.biometricAvailable) return false;
     try {
+      final available = await _localAuth.canCheckBiometrics;
+      final enrolled = await _localAuth.isDeviceSupported();
+      if (!available || !enrolled) return false;
+
       final authenticated = await _localAuth.authenticate(
         localizedReason: reason,
         options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
       );
       if (authenticated) {
-        state = state.copyWith(biometricEnabled: true, mode: AuthMode.biometric);
+        state = state.copyWith(biometricEnabled: true, biometricAvailable: true, mode: AuthMode.biometric);
         await _storage.saveSecure('biometric_enabled', 'true');
       }
       return authenticated;
